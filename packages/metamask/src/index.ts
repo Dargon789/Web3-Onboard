@@ -49,6 +49,7 @@ function metamask({
 
     return {
       label: 'MetaMask',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async ({ appMetadata }) => {
         sdk = (window as any).mmsdk || sdk; // Prevent conflict with existing mmsdk instances

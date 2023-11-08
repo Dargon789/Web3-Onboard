@@ -47,7 +47,8 @@ export enum ProviderIdentityFlag {
   BraveWallet = 'isBraveWallet',
   Rabby = 'isRabby',
   MathWallet = 'isMathWallet',
-  Bitget = 'isBitKeep',
+  GameStop = 'isGamestop',
+  BitKeep = 'isBitKeep',
   Sequence = 'isSequence',
   Core = 'isAvalanche',
   Opera = 'isOpera',
@@ -67,8 +68,9 @@ export enum ProviderIdentityFlag {
   Coin98Wallet = 'isCoin98',
   SubWallet = 'isSubWallet',
   Kayros = 'isKayros',
-  FoxWallet = 'isFoxWallet',
-  Lif3Wallet = 'isLif3Wallet'
+  SubWalletDOT = 'subwallet-js',
+  TalismanDOT = 'talisman',
+  PolkadotJs = 'polkadot-js'
 }
 
 /**
@@ -81,22 +83,19 @@ export enum ProviderIdentityFlag {
  */
 export enum ProviderExternalUrl {
   Binance = 'https://www.bnbchain.org/ru/blog/binance-extension-wallet/',
-  Bitget = 'https://web3.bitget.com/en/wallet-download',
+  BitKeep = 'https://bitkeep.com/en/download?type=0',
   Coinbase = 'https://www.coinbase.com/wallet/downloads',
   MetaMask = 'https://metamask.io/download/',
   OKXWallet = 'https://okx.com/download',
-  Phantom = 'https://phantom.app/ul/v1/connect',
+  Phantom = 'https://phantom.app/download',
   Talisman = 'https://www.talisman.xyz/',
-  Trust = 'https://link.trustwallet.com',
+  Trust = 'https://trustwallet.com/download/',
   OneKey = 'https://onekey.so/download/',
   RoninWallet = 'https://wallet.skymavis.com/',
   Coin98Wallet = 'https://coin98.com/wallet/',
   SubWallet = 'https://www.subwallet.app/',
   Kayros = 'https://www.kayros.games/wallet/',
-  XDEFI = 'https://xdefi.io/',
-  FoxWallet = 'https://foxwallet.com/download',
-  Lif3Wallet = 'https://lif3.com',
-  Rabby = 'https://rabby.io'
+  Polkadotjs = 'https://polkadot.js.org/apps/'
 }
 
 export enum ProviderLabel {
@@ -136,7 +135,8 @@ export enum ProviderLabel {
   Tally = 'Taho',
   Rabby = 'Rabby Wallet',
   MathWallet = 'MathWallet',
-  Bitget = 'Bitget Wallet',
+  GameStop = 'GameStop Wallet',
+  BitKeep = 'BitKeep',
   Sequence = 'Sequence',
   Core = 'Core',
   Enkrypt = 'Enkrypt',
@@ -155,8 +155,9 @@ export enum ProviderLabel {
   Coin98Wallet = 'Coin98 Wallet',
   SubWallet = 'SubWallet',
   Kayros = 'Kayros',
-  FoxWallet = 'FoxWallet',
-  Lif3Wallet = 'Lif3 Wallet'
+  SubWalletDOT = 'SubWallet(substrate)',
+  TalismanDOT = 'Talisman(substrate)',
+  PolkadotJs = 'Polkadot{js}'
 }
 
 export interface MeetOneProvider extends ExternalProvider {
@@ -176,7 +177,8 @@ export enum InjectedNameSpace {
   Web3 = 'web3',
   Arbitrum = 'arbitrum',
   XFI = 'xfi',
-  Bitget = 'bitkeep',
+  GameStop = 'gamestop',
+  BitKeep = 'bitkeep',
   Avalanche = 'avalanche',
   Bitski = 'Bitski',
   Enkrypt = 'enkrypt',
@@ -193,7 +195,10 @@ export enum InjectedNameSpace {
   Coin98Wallet = 'coin98',
   SubWallet = 'SubWallet',
   Kayros = 'kayros',
-  FoxWallet = 'foxwallet'
+  SubWalletDOT = 'subwallet-js',
+  TalismanDOT = 'talisman',
+  PolkadotJs = 'polkadot-js'
+
 }
 
 export interface CustomWindow extends Window {
@@ -206,6 +211,7 @@ export interface CustomWindow extends Window {
   xfi: {
     ethereum: InjectedProvider
   }
+  gamestop: InjectedProvider
   bitkeep: {
     ethereum: InjectedProvider
   }
@@ -242,14 +248,13 @@ export interface CustomWindow extends Window {
     provider: InjectedProvider
   }
   kayros: InjectedProvider
-  foxwallet: InjectedProvider
 }
 
 export type InjectedProvider = ExternalProvider &
-  BinanceProvider &
-  MeetOneProvider &
-  Record<string, boolean> &
-  Record<string, InjectedProvider[]>
+    BinanceProvider &
+    MeetOneProvider &
+    Record<string, boolean> &
+    Record<string, InjectedProvider[]>
 
 export type WalletFilters = {
   /**A provider label mapped to a list of excluded platforms
@@ -279,14 +284,10 @@ export interface InjectedWalletOptions {
   walletUnavailableMessage?: (wallet: WalletModule) => string
   /**Function that can be used to sort the order of wallets that are displayed */
   sort?: (wallets: WalletModule[]) => WalletModule[]
-  /** A boolean that can be passed to disable supporting 6963 (https://eips.ethereum.org/EIPS/eip-6963) 
-   * which will display wallets available on the browser
-   */
-  disable6963Support?: boolean
 }
 
 export interface InjectedWalletModule extends WalletModule {
-  injectedNamespace?: InjectedNameSpace
+  injectedNamespace: InjectedNameSpace
   checkProviderIdentity: (helpers: { provider: any; device: Device }) => boolean
   platforms: Platform[]
   /**
@@ -294,32 +295,6 @@ export interface InjectedWalletModule extends WalletModule {
    * to be shown if not installed or available on the browser
    */
   externalUrl?: string
-  eip6963Provider?: InjectedProvider
-}
 
-// Define a class for the "eip6963:requestProvider" event
-export class EIP6963RequestProviderEvent extends Event {
-  constructor() {
-    super('eip6963:requestProvider')
-  }
-}
 
-// Define an interface for the "eip6963:announceProvider" event
-export interface EIP6963AnnounceProviderEvent extends Event {
-  type: 'eip6963:announceProvider'
-  detail: EIP6963ProviderDetail
-}
-
-// Define an interface for the provider details
-export interface EIP6963ProviderDetail {
-  info: EIP6963ProviderInfo
-  provider: EIP1193Provider
-}
-
-// Define an interface for the provider information
-export interface EIP6963ProviderInfo {
-  uuid: string // Unique identifier of the wallet extension announcement, keep in mind it changes on every request-announcement cycle
-  name: string // Name of the wallet extension
-  icon: string // Icon for the wallet extension
-  rdns: string // Reverse DNS name of the wallet extension
 }
