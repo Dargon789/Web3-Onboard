@@ -1,16 +1,9 @@
 import { WalletInit } from '@subwallet_connect/common'
 
 function coinbaseWallet({
-  darkMode = false,
-  enableMobileWalletLink = false,
-  reloadOnDisconnect = true
-}: {
-  /** @optional Use dark theme */
+                          darkMode = false
+                        }: {
   darkMode?: boolean
-  /** @optional whether to connect mobile web app via WalletLink, defaults to false */
-  enableMobileWalletLink?: boolean
-  /** @optional whether or not to reload dapp automatically after disconnect, defaults to true */
-  reloadOnDisconnect?: boolean
 } = {}): WalletInit {
   return () => {
     return {
@@ -26,7 +19,7 @@ function coinbaseWallet({
         // so we need to detect it to get the real constructor
         const { default: CoinbaseWalletSDK } = await import(
           '@coinbase/wallet-sdk'
-        )
+          )
         const CoinbaseWalletSDKConstructor = (
           (CoinbaseWalletSDK as any).default
             ? (CoinbaseWalletSDK as any).default
@@ -39,9 +32,7 @@ function coinbaseWallet({
         const instance = new CoinbaseWalletSDKConstructor({
           appName: name || '',
           appLogoUrl,
-          darkMode,
-          enableMobileWalletLink,
-          reloadOnDisconnect
+          darkMode
         })
 
         const coinbaseWalletProvider = instance.makeWeb3Provider(

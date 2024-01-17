@@ -1,8 +1,8 @@
-import type { AppMetadata, EIP1193Provider, WalletInit } from '@web3-onboard/common'
+import type { AppMetadata, EIP1193Provider, WalletInit } from '@subwallet_connect/common'
 import type { CapsuleInitOptions } from './types'
 import type { Chain } from '@wagmi/chains'
-import type { Chain as BlocknativeChain } from '@web3-onboard/common'
-import { Environment as CapsuleEnvironment, OAuthMethod, Theme } from '@usecapsule/react-sdk'
+import type { Chain as BlocknativeChain } from '@subwallet_connect/common'
+import { Environment as CapsuleEnvironment } from '@usecapsule/web-sdk'
 
 type ChainId = number
 type ChainsMap = Map<ChainId, Chain>
@@ -70,21 +70,15 @@ function validateOptions(
 function capsule(options: CapsuleInitOptions): WalletInit {
   return () => {
     return {
-      label: options.walletLabel || 'Capsule',
-      getIcon:options.walletIcon || (async () => (await import('./icon')).default),
+      label: 'Capsule',
+      type: 'evm',
+      getIcon: async () => (await import('./icon')).default,
       getInterface: async ({ chains, appMetadata }) => {
-        const { default: Capsule } = await import(
-          '@usecapsule/react-sdk'
-        )
-        const { CapsuleEIP1193Provider } = await import(
-          '@usecapsule/wagmi-v2-integration'
+        const { default: Capsule, CapsuleEIP1193Provider } = await import(
+          '@usecapsule/web-sdk'
         )
         validateOptions(options, chains, appMetadata)
-        const capsule = new Capsule(
-          options.environment, 
-          options.apiKey, 
-          options.constructorOpts
-        )
+        const capsule = new Capsule(options.environment, options.apiKey)
         const chainsMap = await buildChainsMap()
 
         const providerOpts = {
@@ -94,8 +88,7 @@ function capsule(options: CapsuleInitOptions): WalletInit {
           chains: getChainsByIds(
             chains.map(ch => convertChainIdToNumber(ch.id)),
             chainsMap
-          ),
-          ...options.modalProps
+          )
         }
         const provider: EIP1193Provider = new CapsuleEIP1193Provider(providerOpts)
 
@@ -112,4 +105,3 @@ function capsule(options: CapsuleInitOptions): WalletInit {
 
 export default capsule
 export { CapsuleEnvironment as Environment }
-export { OAuthMethod, Theme }

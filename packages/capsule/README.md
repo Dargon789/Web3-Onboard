@@ -1,52 +1,39 @@
-# @web3-onboard/capsule
+# @subwallet_connect/capsule
 
-## Wallet module for connecting Capsule Embedded Wallets to web3-onboard
+## Wallet module for connecting Capsule to web3-onboard
 
-[Capsule](https://usecapsule.com/) is a signing solution that you can use to create secure embedded MPC wallets to onboard your users with just an email or social login. Capsule wallets are recoverable, portable, and permissioned across different crypto applications, so your users don't need to create different signers or contract accounts for every app they use
+[Capsule](https://usecapsule.com/) is a signing solution that you can use to create secure embedded MPC wallets with just an email or social login that are recoverable, portable, and permissioned across different crypto applications, so your users don't need to create different signers or contract accounts for every app they use.
 
-If you'd like to use Capsule's full functionality within the web3onboard package without any extra integration steps, you can also [request a Capsule API Key](https://usecapsule.com/api) and use it with this package.
+Adding the Capsule Module to web3onboard gives your users the ability to log in with Capsule wallets created elsewhere. You can also [request a Capsule API Key](https://form.typeform.com/to/hLaJeYJW) to allow users to easily create embedded wallets within web3onboard without any extra integration steps.
 
 To learn more, check out the [Capsule Developer Docs](https://docs.usecapsule.com/)
 
 ### Install
 
-```bash
-yarn add @web3-onboard/capsule
-# OR
-npm install @web3-onboard/capsule
-# OR
-pnpm install @web3-onboard/capsule
-```
+`yarn add @subwallet_connect/capsule`
 
 ## Options
-For configuration options, check out the [Integration Guide Docs](https://docs.usecapsule.com/integration-guide)
 
 ```typescript
 type CapsuleInitOptions = {
-  environment: string
-  apiKey: string
-  /** @optional capsule object opts */
-  constructorOpts?: ConstructorOpts
+  environment: Environment
   appName: string
-  /** @optional capsule modal props */
-  modalProps?: CapsuleModalV2Props
+  apiKey?: string
 }
 ```
-## Usage
-```typescript
-import Onboard from '@web3-onboard/core'
-import Capsule, { Environment } from '@usecapsule/react-sdk';
-import capsuleModule from '@web3-onboard/capsule'
 
-// initialize capsule
-const capsule = new Capsule(
-  Environment.BETA,  // for production, use ENVIRONMENT.PROD
-  "YOUR_API_KEY"
-  { opts }    // find these at docs.usecapsule.com
-);
+`environment` - The environment to which you want to connect, either `Environment.DEVELOPMENT` for testnets and development only or `Environment.PRODUCTION` for production use.
+`appName` - Your Application's name - displayed in the modal when your users are prompted to log in.
+`apiKey` - Your Capsule API Key. Required for new user creation, but not required if you are only allowing users to log in. To get an API key, fill out [this form](https://form.typeform.com/to/hLaJeYJW).
+
+## Usage
+
+```typescript
+import Onboard from '@subwallet_connect/core'
+import capsuleModule from '@subwallet_connect/capsule'
 
 // initialize the module with options
-const capsuleWallet = capsuleModule(capsule)
+const capsule = capsuleModule()
 
 const onboard = Onboard({
   // ... other Onboard options
