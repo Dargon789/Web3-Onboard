@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Subject } from 'rxjs'
-  import { weiToEth } from '@web3-onboard/common'
+  import { weiToEth } from '@subwallet-connect/common'
   import { fade } from 'svelte/transition'
   import CloseButton from '../elements/CloseButton.svelte'
   import AddressTable from '../elements/AddressTable.svelte'
@@ -12,6 +12,7 @@
     Account,
     AccountsList
   } from '../types.js'
+  import { supportedApps } from '../utils.js';
 
   export let selectAccountOptions: SelectAccountOptions
   export let accounts$: Subject<Account[]>
@@ -21,26 +22,44 @@
     assets,
     chains,
     scanAccounts,
-    supportsCustomPath = true
+    supportsCustomPath = true,
+    containerElement
   } = selectAccountOptions
 
+
   let accountsListObject: AccountsList | undefined
-  let accountSelected: Account | undefined
+  let accountSelected: Account[]  = []
   let customDerivationPath = false
   let showEmptyAddresses = true
   let loadingAccounts = false
   let errorFromScan = ''
+  let accountIdxStart = -10
+  $: accountSelectedLength = accountSelected.length
 
   let scanAccountOptions: ScanAccountsOptions = {
     derivationPath: (basePaths[0] && basePaths[0].value) || '',
     chainId: chains[0].id || '',
-    asset: assets[0] || null
+    asset: assets[0] || null,
+    accountIdxStart
   }
+  let assetLabel = scanAccountOptions.asset.label;
+  $: chainsFilter = chains
 
   const handleDerivationPathSelect = (e: Event) => {
-    let selectVal = (e.target as HTMLInputElement).value
-    if (selectVal === 'customPath') return (customDerivationPath = true)
-    scanAccountOptions.derivationPath = selectVal
+
+    let selectVal = (e.target as HTMLInputElement).value;
+    if (selectVal === 'customPath') return (customDerivationPath = true);
+    scanAccountOptions.derivationPath = selectVal;
+    if(assets[0].label === 'ETH') return;
+
+    chainsFilter = chains.filter(
+            (chain)=>
+                !!supportedApps[chain.id].path
+                && selectVal === supportedApps[chain.id].path
+    )
+    scanAccountOptions.chainId = chainsFilter[0].id;
+    scanAccountOptions.asset = supportedApps[chainsFilter[0].id].asset;
+    assetLabel = scanAccountOptions.asset.label;
   }
 
   const toggleDerivationPathToDropdown = () => {
@@ -53,21 +72,54 @@
     scanAccountOptions.derivationPath = inputVal
   }
 
+  const handleChainSelect = ( e: Event ) => {
+    let selectedChain = (e.target as HTMLInputElement).value
+    const { asset, path } = supportedApps[selectedChain];
+    if(assets[0].label === 'ETH' ) return;
+    console.log(selectedChain);
+    if (assetLabel && path ) {
+      scanAccountOptions = {
+        ...scanAccountOptions,
+        chainId: selectedChain,
+        asset,
+        derivationPath: path
+      }
+      assetLabel = asset.label
+    }
+  }
+
+  const handleAssetSelect = ( e: Event ) => {
+    let selectVal = (e.target as HTMLInputElement).value;
+    if(assets[0].label === 'ETH' ) return;
+    scanAccountOptions.asset = assets.find(
+            (asset) => asset.label === selectVal) || scanAccountOptions.asset;
+    chainsFilter = chains.filter(
+            (chain) =>
+                    !!supportedApps[chain.id].path
+                    && (supportedApps[chain.id].asset.label === selectVal )
+    )
+    scanAccountOptions.derivationPath = supportedApps[chainsFilter[0].id].path
+    scanAccountOptions.chainId = chainsFilter[0].id;
+    assetLabel = selectVal
+  }
+
   const scanAccountsWrap = async (): Promise<void> => {
     try {
       errorFromScan = ''
       loadingAccounts = true
-      const allAccounts = await scanAccounts(scanAccountOptions)
+      scanAccountOptions.accountIdxStart += 10;
+      const allAccounts = await scanAccounts(scanAccountOptions);
+      const allAccountsFilter = allAccounts.filter(account => {
+        return parseFloat(weiToEth(account.balance.value.toString())) > 0
+      })
       accountsListObject = {
-        all: allAccounts,
-        filtered: allAccounts.filter(account => {
-          return parseFloat(weiToEth(account.balance.value.toString())) > 0
-        })
+        all: accountsListObject?.all.concat(allAccounts) || allAccounts,
+        filtered: accountsListObject?.filtered.concat(allAccountsFilter)
+                || allAccountsFilter
       }
       loadingAccounts = false
     } catch (err) {
       const { message } = err as { message: string }
-
       if (
         typeof message === 'string' &&
         message.includes('could not detect network')
@@ -84,7 +136,7 @@
 
   const connectAccounts = () => {
     if (!accountSelected) return
-    accounts$.next([accountSelected])
+    accounts$.next(accountSelected)
     resetModal()
   }
 
@@ -94,11 +146,15 @@
   }
 
   const resetModal = () => {
-    accountSelected = undefined
+    accountSelected = []
     accountsListObject = undefined
     showEmptyAddresses = true
     scanAccountOptions.derivationPath =
       (basePaths[0] && basePaths[0].value) || ''
+  }
+
+  const handleAddAccount = ( length : number ) => {
+    accountSelectedLength = length;
   }
 </script>
 
@@ -123,17 +179,8 @@
       --account-select-font-size-5,
       var(--onboard-font-size-5, var(--font-size-5))
     );
-    line-height: var(
-      --account-select-font-line-height-1,
-      var(--onboard-font-line-height-1, var(--font-line-height-1))
-    );
-    color: var(
-      --account-select-gray-600,
-      var(--onboard-gray-600, var(--gray-600))
-    );
     transition: all 200ms ease-in-out;
-    border: 2px solid
-      var(--account-select-gray-200, var(--onboard-gray-200, var(--gray-200)));
+    border: 2px solid var(--account-select-gray-200, var(--border-color));
     box-sizing: border-box;
     height: 3rem;
     -ms-overflow-style: none;
@@ -203,8 +250,8 @@
 
   .connect-btn:disabled {
     background: var(
-      --account-select-primary-300,
-      var(--onboard-primary-300, var(--primary-300))
+      --account-select-primary-200,
+      var(--onboard-primary-200, var(--primary-200))
     );
     cursor: default;
   }
@@ -216,6 +263,8 @@
     );
     cursor: pointer;
   }
+
+
 
   .dismiss-action {
     color: var(
@@ -254,7 +303,7 @@
 
   select:disabled {
     background: var(
-      --account-select-gray-100,
+      --account-select-accent-background-color,
       var(--onboard-gray-100, var(--gray-100))
     );
   }
@@ -269,11 +318,8 @@
   }
 
   .container {
-    font-family: var(
-      --account-select-font-family-normal,
-      var(--onboard-font-family-normal, var(--font-family-normal))
-    );
-    color: var(--account-select-black, var(--onboard-black, var(--black)));
+    font-family: var(--onboard-font-family-normal, var(--font-family-normal));
+    color: var(--account-select-text-color, var(--text-color));
     position: fixed;
     top: 0;
     right: 0;
@@ -282,21 +328,29 @@
       var(--account-select-modal-z-index)
     );
     display: flex;
-    width: 100vw;
-    height: 100vh;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(4px);
-    background-color: rgba(0, 0, 0, 0.2);
+    background: var(--account-select-background-color, rgba(0, 0, 0, 0.2));
+  }
+
+  .fixed {
+    position: fixed;
+  }
+
+  .h-w-100 {
+    width: 100vw;
+    height: 100vh;
   }
 
   .hardware-connect-modal {
-    width: 50rem;
+    width: 100%;
+    flex-flow: column;
+    display: flex;
     max-height: 51.75rem;
-    display: table;
-    background: var(--account-select-white, var(--onboard-white, var(--white)));
+    background: var(--account-select-background-color, var(--background-color));
     box-shadow: var(
-      --account-select-shadow-1,
+      --account-select-shadow,
       var(--onboard-shadow-1, var(--shadow-1))
     );
     border-radius: 1.5rem;
@@ -320,14 +374,18 @@
       --onboard-account-select-modal-right,
       var(--account-select-modal-right)
     );
+    max-height: 100vh;
+    overflow: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .account-select-modal-position::-webkit-scrollbar {
+    display: none;
   }
 
   .connect-wallet-header {
     position: relative;
-    background: var(
-      --account-select-gray-100,
-      var(--onboard-gray-100, var(--gray-100))
-    );
+    border-bottom: 1px solid var(--border-color, transparent);
     border-radius: 1.5rem 1.5rem 0 0;
     display: flex;
     justify-content: space-between;
@@ -337,6 +395,7 @@
 
   .modal-controls {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
@@ -344,10 +403,6 @@
   }
 
   .control-label {
-    font-family: var(
-      --account-select-font-family-normal,
-      var(--onboard-font-family-normal, var(--font-family-normal))
-    );
     font-style: normal;
     font-weight: bold;
     font-size: var(
@@ -366,14 +421,7 @@
       --account-select-margin-5,
       var(--onboard-margin-5, var(--margin-5))
     );
-    color: var(
-      --account-select-gray-700,
-      var(--onboard-gray-700, var(--gray-700))
-    );
-  }
-
-  .base-path-select {
-    min-width: 20rem;
+    color: var(--account-select-gray-700, inherit);
   }
 
   .asset-select {
@@ -396,19 +444,14 @@
     );
   }
 
-  .input-select {
-    background-image: url(data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23242835%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E),
-      linear-gradient(to bottom, transparent 0%, transparent 100%);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-    background-size: 0.65em auto, 100%;
+  .hidden-input-select {
     position: absolute;
     top: 2.7rem;
     right: 0.2rem;
     width: 2.5rem;
     height: 2.5rem;
-    background: var(--account-select-white, var(--onboard-white, var(--white)));
-    border-radius: 1rem;
+    background: transparent;
+    cursor: pointer;
   }
 
   .asset-container {
@@ -421,28 +464,51 @@
   .table-section {
     max-height: 31.8rem;
     padding: 1rem;
+    margin-top: 2rem;
   }
 
   .table-container {
-    background: var(--account-select-white, var(--onboard-white, var(--white)));
-    border: 2px solid
-      var(--account-select-gray-200, var(--onboard-gray-200, var(--gray-200)));
+    border: 2px solid var(--account-select-gray-200, var(--border-color));
     box-sizing: border-box;
     border-radius: 0.5rem;
   }
 
   .address-found-count {
-    padding: 1rem;
-    color: var(
-      --account-select-gray-500,
-      var(--onboard-gray-500, var(--gray-500))
-    );
+    padding: 0 2rem;
+  }
+  @media all and (min-width: 768px) {
+    .hardware-connect-modal {
+      width: 50rem;
+      display: table;
+      flex-flow: unset;
+    }
+    .modal-controls {
+      flex-wrap: nowrap;
+    }
+
+    .base-path-select {
+      min-width: 20rem;
+    }
+
+    .table-section {
+      margin-top: unset;
+    }
+
+    .account-select-modal-position {
+      max-height: unset;
+      overflow: unset;
+    }
   }
 </style>
 
-<div class="container">
+<div
+  class="container"
+  class:h-w-100={!containerElement}
+  class:fixed={!containerElement}
+>
   <div
-    class="hardware-connect-modal account-select-modal-position"
+    class="hardware-connect-modal"
+    class:account-select-modal-position={!containerElement}
     transition:fade
   >
     <header class="connect-wallet-header">
@@ -462,12 +528,13 @@
             on:change={handleCustomPath}
           />
           <span
-            class="input-select"
+            class="hidden-input-select"
             on:click={toggleDerivationPathToDropdown}
           />
         {:else if !customDerivationPath}
           <select
             class="base-path-select"
+            bind:value={scanAccountOptions['derivationPath']}
             on:change={handleDerivationPathSelect}
           >
             {#each basePaths as path}
@@ -484,9 +551,12 @@
 
       <div class="asset-container">
         <h4 class="control-label">Asset</h4>
-        <select class="asset-select" bind:value={scanAccountOptions['asset']}>
+        <select class="asset-select"
+                bind:value={assetLabel}
+                on:change={handleAssetSelect}
+        >
           {#each assets as asset}
-            <option value={asset}>
+            <option value={asset.label}>
               {asset.label}
             </option>
           {/each}
@@ -497,9 +567,10 @@
         <h4 class="control-label">Network</h4>
         <select
           bind:value={scanAccountOptions['chainId']}
+          on:change={handleChainSelect}
           class="network-select"
         >
-          {#each chains as chain}
+          {#each chainsFilter as chain}
             <option value={chain.id}>
               {chain.label}
             </option>
@@ -517,7 +588,9 @@
         />
         <AddressTable
           {accountsListObject}
+          lengthAccountSelectedDefault={10}
           {showEmptyAddresses}
+          {handleAddAccount}
           bind:accountSelected
         />
       </div>
@@ -539,17 +612,20 @@
         {/if}
       </div>
       <div class="modal-controls">
-        <div
-          class="dismiss-action"
-          id="dismiss-account-select"
-          on:click={dismiss}
-        >
-          Dismiss
+        <div>
+          <div
+            class="dismiss-action"
+            id="dismiss-account-select"
+            on:click={dismiss}
+          >
+            Dismiss
+          </div>
         </div>
+
         <button
           class="connect-btn"
           id="connect-accounts"
-          disabled={!accountSelected}
+          disabled={ accountSelectedLength === 0 }
           on:click={connectAccounts}
         >
           Connect

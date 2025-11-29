@@ -33,7 +33,7 @@
 
   h4 {
     margin: 1.5rem 0 0.5rem 0;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .action-required-heading,
@@ -57,12 +57,12 @@
   }
 
   a {
-    font-weight: 700;
+    font-weight: 600;
   }
 
   button {
     margin-top: 1.5rem;
-    font-weight: 700;
+    font-weight: 600;
   }
 </style>
 
@@ -77,13 +77,13 @@
     </h4>
 
     <p class="action-required-info">
-      {$_('modals.actionRequired.paragraph')}
+      {$_('modals.actionRequired.paragraph', { values: { wallet } })}
 
       {#if wallet === 'MetaMask'}
         <a
           href="https://metamask.zendesk.com/hc/en-us/articles/360061346311-Switching-accounts-in-MetaMask"
           target="_blank"
-          rel="noreferrer noopener">{$_('modals.actionRequired.linkText')}</a
+          rel="noreferrer noopener">{$_('modals.actionRequired.linkText', { values: { wallet } })}</a
         >
       {/if}
     </p>

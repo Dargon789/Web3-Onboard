@@ -3,19 +3,22 @@
     "selectingWallet": {
       "header": "Available Wallets",
       "sidebar": {
-        "heading": "Get Started",
+        "heading": "",
         "subheading": "Connect your wallet",
-        "paragraph": "Connecting your wallet is like “logging in” to Web3. Select your wallet from the options to get started."
+        "paragraph": "Select your wallet from the provided options to get started",
+        "IDontHaveAWallet": "Don't see your wallet?"
       },
       "recommendedWalletsPart1": "{app} only supports",
       "recommendedWalletsPart2": "on this platform. Please use or install one of the supported wallets to continue",
       "installWallet": "You do not have any wallets installed that {app} supports, please use a supported wallet",
       "agreement": {
         "agree": "I agree to the",
-        "terms": "Terms & Conditions",
+        "terms": "Terms of Use",
         "and": "and",
         "privacy": "Privacy Policy"
-      }
+      },
+      "whyDontISeeMyWallet": "Why don't I see my wallet?",
+      "learnMore": "Click here to learn more"
     },
     "connectingWallet": {
       "header": "{connectionRejected, select, false {Connecting to {wallet}...} other {Connection Rejected}}",
@@ -37,6 +40,15 @@
         "paragraph": "Your wallet is now connected to {app}"
       },
       "mainText": "Connected"
+    },
+    "installWallet": {
+      "header": "{app}",
+      "sidebar": {
+        "heading": "",
+        "subheading": "Connect your wallet",
+        "paragraph": "Connecting your wallet is like “logging in” to Web3. Select your wallet from the options to get started.",
+        "IDontHaveAWallet": "I don't have a wallet"
+      }
     }
   },
   "modals": {
@@ -53,36 +65,64 @@
     },
     "confirmDisconnectAll": {
       "heading": "Disconnect all Wallets",
-      "description": "Are you sure that you would like to disconnect all your wallets?",
+      "subHeading": "Disconnect all accounts?",
+      "description": "Once you press Disconnect, all connected accounts will be disconnected. If you only want to disconnect selected accounts, go to the wallet app.",
       "confirm": "Confirm",
       "cancel": "Cancel"
+    },
+    "confirmTransactionProtection": {
+      "heading": "Enable Transaction Protection",
+      "subHeading": "Protect your transaction",
+      "description": "Protect RPC endpoints hide your transaction from front-running and sandwich bots.",
+      "link": "Learn more",
+      "enable": "Enable",
+      "dismiss": "Dismiss"
+    },
+    "confirmSignMessage": {
+      "heading": "Sign Message",
+      "subHeading": "Sign Message to check the connectivity between your dapp and wallet.",
+      "evmWallet": {
+        "content": "Type Method Message"
+      },
+      "substrateWallet": {
+        "content": "Sign Dummy for wallet substrate"
+      },
+      "sign": "Sign",
+      "cancel": "Cancel"
+    },
+    "confirmConnectHDWallet": {
+      "heading": "Connect your {wallet}",
+      "subHeading": "",
+      "description": "All connected wallets will be disconnected immediately. If you want to disconnect some accounts, please go to the corresponding \nwallet app to disable.",
+      "confirm": "Confirm"
     }
   },
   "accountCenter": {
     "connectAnotherWallet": "Connect another Wallet",
     "disconnectAllWallets": "Disconnect all Wallets",
     "currentNetwork": "Current Network",
+    "enableTransactionProtection": "Enable Transaction Protection",
     "appInfo": "App Info",
     "learnMore": "Learn More",
     "gettingStartedGuide": "Getting Started Guide",
     "smartContracts": "Smart Contract(s)",
     "explore": "Explore",
-    "backToApp": "Back to dapp",
-    "poweredBy": "powered by",
+    "poweredBy": "Polkadot version by",
     "addAccount": "Add Account",
     "setPrimaryAccount": "Set Primary Account",
     "disconnectWallet": "Disconnect Wallet",
-    "copyAddress": "Copy Wallet address"
+    "copyAddress": "Copy Wallet address",
+    "signMessage": "Sign Message"
   },
   "notify": {
     "transaction": {
-      "txRequest": "Your transaction is waiting for you to confirm",
+      "txRequest": "Processing…",
       "nsfFail": "You have insufficient funds for this transaction",
       "txUnderpriced": "The gas price for your transaction is too low, try a higher gas price",
       "txRepeat": "This could be a repeat transaction",
       "txAwaitingApproval": "You have a previous transaction waiting for you to confirm",
-      "txConfirmReminder": "Please confirm your transaction to continue",
-      "txSendFail": "You rejected the transaction",
+      "txConfirmReminder": "Confirm transaction on your wallet to continue",
+      "txSendFail": "Rejected by user",
       "txSent": "Your transaction has been sent to the network",
       "txStallPending": "Your transaction has stalled before it was sent, please try again",
       "txStuck": "Your transaction is stuck due to a nonce gap",
@@ -91,7 +131,7 @@
       "txSpeedUp": "Your transaction has been sped up",
       "txCancel": "Your transaction is being canceled",
       "txFailed": "Your transaction has failed",
-      "txConfirmed": "Your transaction has succeeded",
+      "txConfirmed": "Transaction successful",
       "txError": "Oops something went wrong, please try again",
       "txReplaceError": "There was an error replacing your transaction, please try again"
     },

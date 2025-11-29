@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n'
   import { flip } from 'svelte/animate'
   import { fade, fly } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
@@ -62,18 +61,19 @@
     padding-left: 0;
     display: flex;
     flex-flow: column nowrap;
+    position: absolute;
     font-size: var(
-      --notify-onboard-font-size-5,
+      --notify-onboard-font-size,
       var(--onboard-font-size-5, var(--font-size-5))
     );
     list-style-type: none;
     overflow: visible;
     scrollbar-width: none;
     box-sizing: border-box;
-    z-index: var(--notify-onboard-z-index, 300);
+    z-index: var(--notify-onboard-z-index, 10000);
     font-family: var(
-      --notify-onboard-font-family-normal,
-      var(--onboard-font-family-normal, var(--font-family-normal))
+      --notify-onboard-font-family,
+      var(--onboard-font-family-normal, inherit)
     );
     margin: 8px 0;
     pointer-events: all;
@@ -133,7 +133,7 @@
       <li
         animate:flip={{ duration: 500 }}
         on:click|stopPropagation
-        in:fly={{ duration: 1200, delay: 300, x, y, easing: elasticOut }}
+        in:fly|local={{ duration: 1200, delay: 300, x, y, easing: elasticOut }}
         out:fade={{ duration: 300, easing: cubicOut }}
         class={`bn-notify-li-${position} ${
           position.includes('top')

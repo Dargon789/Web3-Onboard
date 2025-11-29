@@ -1,37 +1,35 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition'
+  import { slide } from 'svelte/transition'
   import infoIcon from '../../icons/info.js'
 </script>
 
 <style>
   .container {
-    padding: var(--onboard-spacing-5, var(--spacing-5));
-    color: var(--onboard-warning-700, var(--warning-700));
+    gap: 1rem;
+    padding: 0.75rem;
+    color: var(--white);
     font-size: var(--onboard-font-size-7, var(--font-size-7));
     line-height: 16px;
-    border: 1px solid var(--onboard-warning-400, var(--warning-400));
-    background: var(--onboard-warning-100, var(--warning-100));
-    margin: 0;
+    background: var(--gray-800);
     border-radius: 12px;
+    display: flex;
+    align-items: center;
   }
 
   .icon {
-    color: var(--onboard-warning-700, var(--warning-700));
+    color: var(--onboard-warning-700, var(--warning-800));
     width: 1rem;
     height: 1rem;
-    margin-left: var(--onboard-spacing-5, var(--spacing-5));
+    flex: 0 0 auto;
   }
 
-  p {
-    margin: 0;
-    width: fit-content;
-  }
+
 </style>
 
-<div in:fade class="container flex justify-between">
-  <p>
+<div in:slide|local="{{delay: 50, duration: 500}}" class="container flex justify-between">
+  <div>
     <slot />
-  </p>
+  </div>
 
   <div class="icon">
     {@html infoIcon}

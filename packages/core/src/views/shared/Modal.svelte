@@ -1,6 +1,5 @@
 <script lang="ts" context="module">
   let scrollContainer: HTMLElement
-
   export function modalAutoScroll(el: HTMLElement): void {
     const { scrollHeight, clientHeight } = scrollContainer || {}
 
@@ -16,18 +15,31 @@
 <script lang="ts">
   import { fade } from 'svelte/transition'
   import { onDestroy, onMount } from 'svelte'
+  import { configuration } from '../../configuration.js'
+  import CloseButton from './CloseButton.svelte';
+  import { MOBILE_WINDOW_WIDTH } from '../../constants.js';
+
+  const connectContainerEl = !!configuration.containerElements.connectModal
 
   const html = document.documentElement
   onMount(() => {
-    html.style.position = 'sticky'
-    html.style.overflow = 'hidden'
+    if (!connectContainerEl) {
+      html.style.position = 'sticky'
+      html.style.overflow = 'hidden'
+    }
   })
 
   onDestroy(() => {
-    html.style.position = ''
-    html.style.removeProperty('overflow')
+    if (!connectContainerEl) {
+      html.style.position = ''
+      html.style.removeProperty('overflow')
+    }
   })
   export let close: () => void
+  export let maskClose = false ;
+
+  let windowWidth: number
+
 </script>
 
 <style>
@@ -39,10 +51,14 @@
   }
 
   .background {
-    width: 100vw;
-    height: 100vh;
     background: var(--onboard-modal-backdrop, var(--modal-backdrop));
     pointer-events: all;
+  }
+
+  .full-screen-background {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
   }
 
   .max-height {
@@ -61,43 +77,148 @@
   }
 
   .modal-styling {
-    border-radius: var(--onboard-modal-border-radius, var(--border-radius-1))
-      var(--onboard-modal-border-radius, var(--border-radius-1)) 0 0;
+    --border-radius: var(
+      --onboard-modal-border-radius,
+      var(--w3o-border-radius, 1rem)
+    );
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
     box-shadow: var(--onboard-modal-box-shadow, var(--box-shadow-0));
   }
 
   .modal {
     overflow-y: auto;
-    background: var(--onboard-modal-background, white);
-    color: var(--onboard-modal-color, initial);
-    max-width: 100vw;
+    background: var(--w3o-background-color, black);
+    color: var(--w3o-text-color, initial);
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .modal.mobile {
+    width: 100vw;
+    overflow-y: hidden;
+    animation: moveUp .5s ease-in-out;
+  }
+
+  .modal.modal-notify .modal-footer{
+      padding: var(--spacing-4);
+  }
+
+  .modal.modal-notify .modal-content {
+    margin: var(--spacing-4);
+  }
+
+  .modal-title {
+    display: flex;
+    color: var(--white);
+    gap: var(--spacing-4);
+    justify-content: start;
+    font-weight: 600;
+    font-size: var(--font-size-4);
+    line-height: 28px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .modal-title.title-active {
+    padding: 16px 64px 16px 8px;
+  }
+
+  .icon-container {
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+    color: var(--onboard-warning-500, var(--warning-500));
+  }
+
+  .width-100 {
+    width: 100%;
   }
 
   .modal-container-mobile {
     bottom: 0;
   }
 
+
+
   @media all and (min-width: 768px) {
     .modal-styling {
-      border-radius: var(--onboard-modal-border-radius, var(--border-radius-1));
+      border-radius: var(--border-radius-5);
     }
     .modal-container-mobile {
       bottom: unset;
       margin: 1rem;
     }
+    .width-100 {
+      width: unset;
+    }
   }
+
+  @keyframes moveUp {
+    0%{
+        transform: translate3d(0, 100%, 0);
+        transform-origin: 0 0;
+        opacity: 0;
+      }
+    90% {
+      transform: translate3d(0, -1%, 0);
+      transform-origin: 0 0;
+      opacity: 1
+    }
+
+    100% {
+      transform: translate3d(0, 0, 0);
+      transform-origin: 0 0;
+      opacity: 1
+    }
+  }
+
 </style>
 
-<section class="fixed" transition:fade>
+
+<svelte:window bind:innerWidth={windowWidth} />
+
+<section class:fixed={!connectContainerEl} transition:fade>
   <div
     on:click={close}
     class="background flex items-center justify-center relative"
+    class:full-screen-background={!connectContainerEl}
   >
-    <div class="modal-container-mobile modal-position flex absolute">
-      <div on:click|stopPropagation class="flex relative max-height">
-        <div class="modal-overflow modal-styling relative flex justify-center">
-          <div class="modal relative">
-            <slot />
+    <div
+      class="modal-container-mobile modal-position flex"
+      class:absolute={!connectContainerEl}
+      class:width-100={connectContainerEl}
+    >
+      <div
+        on:click|stopPropagation
+        class="flex relative max-height"
+        class:width-100={connectContainerEl}
+      >
+        <div
+          class="modal-overflow modal-styling relative flex justify-center"
+
+          style={`${connectContainerEl ? 'max-width: 100%;' : ''}`}
+        >
+          <div class="modal relative"
+               class:modal-notify={maskClose}
+               class:mobile={windowWidth <= MOBILE_WINDOW_WIDTH}
+          >
+            <div class="modal-title"
+                class:title-active = {maskClose}
+            >
+              {#if maskClose }
+                <div class="icon-container flex justify-center items-center" on:click={close}>
+                  <CloseButton />
+                </div>
+              {/if}
+              <slot name="title"  />
+            </div>
+            <div class="modal-content">
+              <slot name="content" />
+            </div>
+            <div class="modal-footer">
+              <slot name="footer"  />
+            </div>
           </div>
         </div>
       </div>

@@ -1,13 +1,14 @@
-import { WalletInit } from '@web3-onboard/common'
+import { WalletInit } from '@subwallet-connect/common'
 
 function coinbaseWallet({
-  darkMode = false
-}: {
+                          darkMode = false
+                        }: {
   darkMode?: boolean
 } = {}): WalletInit {
   return () => {
     return {
       label: 'Coinbase Wallet',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async ({ chains, appMetadata }) => {
         const [chain] = chains
@@ -18,7 +19,7 @@ function coinbaseWallet({
         // so we need to detect it to get the real constructor
         const { default: CoinbaseWalletSDK } = await import(
           '@coinbase/wallet-sdk'
-        )
+          )
         const CoinbaseWalletSDKConstructor = (
           (CoinbaseWalletSDK as any).default
             ? (CoinbaseWalletSDK as any).default

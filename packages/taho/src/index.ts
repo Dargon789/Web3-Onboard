@@ -1,0 +1,34 @@
+import type { WalletInit } from '@subwallet-connect/common'
+import { createEIP1193Provider } from '@subwallet-connect/common'
+import { CustomWindow } from './types.js'
+import detectEthereumProvider from 'tallyho-detect-provider'
+import TallyHoOnboarding from 'tallyho-onboarding'
+declare const window: CustomWindow
+
+function tahoWallet(): WalletInit {
+  if (typeof window === 'undefined') return () => null
+  return () => {
+    return {
+      label: 'Taho',
+      type : 'evm',
+      injectedNamespace: 'tally',
+      checkProviderIdentity: ({ provider }: { provider: any }) => {
+        !!provider && !!provider['isTally']
+      },
+      getIcon: async () => (await import('./icon.js')).default,
+      getInterface: async () => {
+        const provider = await detectEthereumProvider({ mustBeTallyHo: true })
+        if (!provider) {
+          const onboarding = new TallyHoOnboarding()
+          onboarding.startOnboarding()
+          throw new Error('Please install Taho to use this wallet')
+        } else {
+          return { provider: createEIP1193Provider(window.tally) }
+        }
+      },
+      platforms: ['desktop']
+    }
+  }
+}
+
+export default tahoWallet

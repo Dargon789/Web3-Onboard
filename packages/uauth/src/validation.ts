@@ -6,16 +6,19 @@ const uauthOptions = Joi.object({
   redirectUri: Joi.string().required(),
   scope: Joi.string().allow(null),
   shouldLoginWithRedirect: Joi.boolean().allow(null),
-  bridge: Joi.string().allow(null),
-  qrcodeModalOptions: {
-    mobileLinks: Joi.array().allow(null)
-  },
-  connectFirstChainId: Joi.boolean().allow(null)
+  walletConnectProjectId: Joi.string().required(),
+  requiredChains: Joi.array().items(Joi.number()),
+  optionalChains: Joi.array().items(Joi.number()),
+  additionalOptionalMethods: Joi.array().items(Joi.string()),
+  handleUri: Joi.function()
 })
 
 type ValidateReturn = Joi.ValidationResult | null
 
-const validate = (validator: Joi.Schema, data: unknown): ValidateReturn => {
+const validate = (
+  validator: Joi.AnySchema<any>,
+  data: unknown
+): ValidateReturn => {
   const result = validator.validate(data)
   return result.error ? result : null
 }

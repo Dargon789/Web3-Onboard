@@ -1,5 +1,5 @@
-import type { WalletInit } from '@web3-onboard/common'
-import { createEIP1193Provider } from '@web3-onboard/common'
+import type { WalletInit } from '@subwallet-connect/common'
+import { createEIP1193Provider } from '@subwallet-connect/common'
 import { CustomWindow } from './types.js'
 import detectEthereumProvider from 'tallyho-detect-provider'
 import TallyHoOnboarding from 'tallyho-onboarding'
@@ -9,7 +9,8 @@ function tallyHoWallet(): WalletInit {
   if (typeof window === 'undefined') return () => null
   return () => {
     return {
-      label: 'Tally Ho Wallet',
+      label: 'Taho',
+      type : 'evm',
       injectedNamespace: 'tally',
       checkProviderIdentity: ({ provider }: { provider: any }) => {
         !!provider && !!provider['isTally']
@@ -20,7 +21,7 @@ function tallyHoWallet(): WalletInit {
         if (!provider) {
           const onboarding = new TallyHoOnboarding()
           onboarding.startOnboarding()
-          throw new Error('Please install Tally Ho to use this wallet')
+          throw new Error('Please install Taho to use this wallet')
         } else {
           return { provider: createEIP1193Provider(window.tally) }
         }

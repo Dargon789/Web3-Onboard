@@ -1,4 +1,8 @@
-# @web3-onboard/react
+<a href="https://onboard.blocknative.com/">
+  <img alt="Web3-Onboard UI Components" src="https://github.com/blocknative/web3-onboard/blob/develop/assets/core.svg?raw=true" />
+</a>
+
+# @subwallet-connect/react
 
 A collection of React hooks for implementing web3-onboard in to a React project
 
@@ -7,30 +11,31 @@ A collection of React hooks for implementing web3-onboard in to a React project
 ### Install Modules
 
 **NPM**
-`npm i @web3-onboard/react @web3-onboard/injected-wallets ethers`
+`npm i @subwallet-connect/react @subwallet-connect/injected-wallets ethers`
 
 **Yarn**
-`yarn add @web3-onboard/react @web3-onboard/injected-wallets ethers`
+`yarn add @subwallet-connect/react @subwallet-connect/injected-wallets ethers`
 
 ### Add Code
 
-```javascript
+```javascript title="App.js"
 import React from 'react'
-import { init, useConnectWallet } from '@web3-onboard/react'
-import injectedModule from '@web3-onboard/injected-wallets'
+import { init, useConnectWallet } from '@subwallet-connect/react'
+import injectedModule from '@subwallet-connect/injected-wallets'
 import { ethers } from 'ethers'
 
 // Sign up to get your free API key at https://explorer.blocknative.com/?signup=true
-const dappId = '1730eff0-9d50-4382-a3fe-89f0d34a2070'
+// Required for Transaction Notifications and Transaction Preview
+const apiKey = '1730eff0-9d50-4382-a3fe-89f0d34a2070'
 
 const injected = injectedModule()
 
-// Only one RPC endpoint required per chain
-const rpcAPIKey = '<INFURA_KEY>' || '<ALCHEMY_KEY>'
-const rpcUrl = `https://eth-mainnet.g.alchemy.com/v2/${rpcAPIKey}` || `https://mainnet.infura.io/v3/${rpcAPIKey}`
+const infuraKey = '<INFURA_KEY>'
+const rpcUrl = `https://mainnet.infura.io/v3/${infuraKey}`
 
 // initialize Onboard
 init({
+  apiKey,
   wallets: [injected],
   chains: [
     {
@@ -38,6 +43,12 @@ init({
       token: 'ETH',
       label: 'Ethereum Mainnet',
       rpcUrl
+    },
+    {
+      id: '0x2105',
+      token: 'ETH',
+      label: 'Base',
+      rpcUrl: 'https://mainnet.base.org'
     }
   ]
 })
@@ -49,6 +60,8 @@ function App() {
   let ethersProvider
 
   if (wallet) {
+    // if using ethers v6 this is:
+    // ethersProvider = new ethers.BrowserProvider(wallet.provider, 'any')
     ethersProvider = new ethers.providers.Web3Provider(wallet.provider, 'any')
   }
 
@@ -63,15 +76,18 @@ function App() {
     </div>
   )
 }
+
+export default App
 ```
 
 ### Using the `Web3OnboardProvider`
+
 You can use the context provider `Web3OnboardProvider` to better manage global state. Simply wrap the provider around your `App` and
 the initialized web3Onboard instance will be available in all children components. See example below.
 
 ```ts
-import { Web3OnboardProvider, init } from '@web3-onboard/react'
-import injectedModule from '@web3-onboard/injected-wallets'
+import { Web3OnboardProvider, init } from '@subwallet-connect/react'
+import injectedModule from '@subwallet-connect/injected-wallets'
 
 const INFURA_KEY = ''
 
@@ -89,9 +105,9 @@ const web3Onboard = init({
   wallets,
   chains,
   appMetadata: {
-    name: "Web3-Onboard Demo",
+    name: 'Web3-Onboard Demo',
     icon: '<svg>App Icon</svg>',
-    description: "A demo of Web3-Onboard."
+    description: 'A demo of Web3-Onboard.'
   }
 })
 
@@ -108,14 +124,14 @@ export default MyApp
 
 ## `init`
 
-The `init` function must be called before any hooks can be used. The `init` function just initializes `web3-onboard` and makes it available for all hooks to use. For reference check out the [initialization docs for `@web3-onboard/core`](../core/README.md#initialization)
+The `init` function must be called before any hooks can be used. The `init` function just initializes `web3-onboard` and makes it available for all hooks to use. For reference check out the [initialization docs for `@subwallet-connect/core`](../core/README.md#initialization)
 
 ## `useConnectWallet`
 
 This hook allows you to connect the user's wallet and track the state of the connection status and the wallet that is connected.
 
 ```typescript
-import { useConnectWallet } from '@web3-onboard/react'
+import { useConnectWallet } from '@subwallet-connect/react'
 
 type UseConnectWallet = (): [
   { wallet: WalletState | null; connecting: boolean },
@@ -159,6 +175,7 @@ const [
 
 
 ```
+
 **`setPrimaryWallet`**
 The primary wallet (first in the list of connected wallets) and primary account (first in the list of connected accounts for a wallet) can be set by using the `setPrimaryWallet` function. The wallet that is set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in:
 
@@ -168,18 +185,15 @@ setPrimaryWallet(wallets[1])
 
 // set the second wallet in the wallets array as the primary wallet
 // as well as setting the third account in that wallet as the primary account
-setPrimaryWallet(
-  wallets[1],
-  wallets[1].accounts[2].address
-)
+setPrimaryWallet(wallets[1], wallets[1].accounts[2].address)
 ```
 
 ## `useSetChain`
 
-This hook allows you to set the chain of a user's connected wallet, keep track of the current chain the user is connected to and the status of setting the chain. Passing in a wallet label will operate on that connected wallet, otherwise it will default to the last connected wallet.
+This hook allows you to set the chain of a user's connected wallet, keep track of the current chain the user is connected to and the status of setting the chain. Passing in a wallet label will operate on that connected wallet, otherwise it will default to the last connected wallet. If a chain was instantiated without an rpcUrl, token, or label, add these options for wallets that require this information for adding a new chain.
 
 ```typescript
-import { useSetChain } from '@web3-onboard/react'
+import { useSetChain } from '@subwallet-connect/react'
 
 type UseSetChain = (
   walletLabel?: string
@@ -195,7 +209,13 @@ type UseSetChain = (
 type SetChainOptions = {
   chainId: string
   chainNamespace?: string
-  wallet?: WalletState['label']
+  wallet?: WalletState['label'],
+  // if chain was instantiated without rpcUrl, include here. Used for network requests
+  rpcUrl?: string,
+  // if chain was instantiated without token, include here. Used for display, eg Ethereum Mainnet
+  label?: string,
+  // if chain was instantiated without label, include here. The native token symbol, eg ETH, BNB, MATIC
+  token?: string,
 }
 
 const [
@@ -212,7 +232,7 @@ const [
 
 This hook allows the dev to access all notifications if enabled, send custom notifications and update notify <enable/disable & update transactionHandler function>
 **note** requires an API key be added to the initialization, enabled by default if API key exists
-For full Notification documentation please see [Notify section within the `@web3-onboard/core` docs](../core/README.md#options)
+For full Notification documentation please see [Notify section within the `@subwallet-connect/core` docs](../core/README.md#options)
 
 ```typescript
 type UseNotifications = (): [
@@ -293,7 +313,7 @@ type TxDetails = {
 ```
 
 ```typescript
-import { useNotifications } from '@web3-onboard/react'
+import { useNotifications } from '@subwallet-connect/react'
 
 const [
   notifications, // the list of all notifications that update when notifications are added, updated or removed
@@ -380,7 +400,7 @@ const sendTransactionWithPreFlightNotifications = async () => {
 This hook allows you to track the state of all the currently connected wallets.
 
 ```typescript
-import { useWallets } from '@web3-onboard/react'
+import { useWallets } from '@subwallet-connect/react'
 
 type UseWallets = (): WalletState[]
 
@@ -392,7 +412,7 @@ const connectedWallets = useWallets()
 This hook allows you to track and update the state of the AccountCenter
 
 ```typescript
-import { useAccountCenter } from '@web3-onboard/react'
+import { useAccountCenter } from '@subwallet-connect/react'
 
 type UseAccountCenter = (): ((
   update: AccountCenter | Partial<AccountCenter>
@@ -419,7 +439,7 @@ const updateAccountCenter = useAccountCenter()
 This hook allows you to set the locale of your application to allow language updates associated with the i18n config
 
 ```typescript
-import { useSetLocale } from '@web3-onboard/react'
+import { useSetLocale } from '@subwallet-connect/react'
 
 type useSetLocale = (): ((locale: string) => void)
 

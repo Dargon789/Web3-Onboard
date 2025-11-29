@@ -1,7 +1,9 @@
-import type { Chain, WalletInit, WalletModule } from '@web3-onboard/common'
+import type { AppMetadata, Chain, WalletInit, WalletModule } from '@subwallet-connect/common'
 import { nanoid } from 'nanoid'
 import { dispatch } from './index.js'
 import { configuration } from '../configuration.js'
+import { handleThemeChange, returnTheme } from '../themes.js'
+
 
 import type {
   Account,
@@ -26,7 +28,11 @@ import type {
   CustomNotificationUpdate,
   Notify,
   ConnectModalOptions,
-  UpdateConnectModalAction
+  UpdateConnectModalAction,
+  Theme,
+  UpdateChainsAction,
+  UpdateAppMetadataAction,
+  SendSignMessage
 } from '../types.js'
 
 import {
@@ -36,11 +42,12 @@ import {
   validateCustomNotification,
   validateCustomNotificationUpdate,
   validateString,
-  validateWallet,
   validateWalletInit,
   validateUpdateBalances,
   validateNotify,
-  validateConnectModalUpdate
+  validateUpdateTheme,
+  validateSetChainOptions,
+  validateAppMetadataUpdate
 } from '../validation.js'
 
 import {
@@ -57,8 +64,13 @@ import {
   ADD_NOTIFICATION,
   REMOVE_NOTIFICATION,
   UPDATE_ALL_WALLETS,
-  UPDATE_CONNECT_MODAL
+  UPDATE_CONNECT_MODAL,
+  UPDATE_CHAINS,
+  UPDATE_APP_METADATA, SEND_SIGN_MESSAGE
 } from './constants.js'
+import { getBalance } from '../provider.js';
+
+
 
 export function addChains(chains: Chain[]): void {
   // chains are validated on init
@@ -68,20 +80,43 @@ export function addChains(chains: Chain[]): void {
       ...rest,
       namespace,
       id: id.toLowerCase(),
-      rpcUrl: rpcUrl.trim()
+      rpcUrl: rpcUrl ? rpcUrl.trim() : null
     }))
   }
 
   dispatch(action as AddChainsAction)
 }
 
-export function addWallet(wallet: WalletState): void {
-  const error = validateWallet(wallet)
+export function updateChain(updatedChain: Chain): void {
+  const {
+    label,
+    token,
+    rpcUrl,
+    id: chainId,
+    namespace: chainNamespace
+  } = updatedChain
+  const error = validateSetChainOptions(
+    { label, token, rpcUrl, chainId, chainNamespace }
+  )
 
   if (error) {
-    console.error(error)
     throw error
   }
+
+  const action = {
+    type: UPDATE_CHAINS,
+    payload: updatedChain
+  }
+  dispatch(action as UpdateChainsAction)
+}
+
+export function addWallet(wallet: WalletState): void {
+  // const error = validateWallet(wallet)
+  //
+  // if (error) {
+  //   console.error(error)
+  //   throw error
+  // }
 
   const action = {
     type: ADD_WALLET,
@@ -91,18 +126,19 @@ export function addWallet(wallet: WalletState): void {
   dispatch(action as AddWalletAction)
 }
 
-export function updateWallet(id: string, update: Partial<WalletState>): void {
-  const error = validateWallet(update)
-
-  if (error) {
-    console.error(error)
-    throw error
-  }
+export function updateWallet(id: string, type : WalletState['type'], update: Partial<WalletState>): void {
+  // const error = validateWallet(update)
+  //
+  // if (error) {
+  //   console.error(error)
+  //   throw error
+  // }
 
   const action = {
     type: UPDATE_WALLET,
     payload: {
       id,
+      type,
       ...update
     }
   }
@@ -110,7 +146,7 @@ export function updateWallet(id: string, update: Partial<WalletState>): void {
   dispatch(action as UpdateWalletAction)
 }
 
-export function removeWallet(id: string): void {
+export function removeWallet(id: string, type : 'evm' | 'substrate'): void {
   const error = validateString(id, 'wallet id')
 
   if (error) {
@@ -120,33 +156,50 @@ export function removeWallet(id: string): void {
   const action = {
     type: REMOVE_WALLET,
     payload: {
-      id
+      id,
+      type: type
     }
   }
+
 
   dispatch(action as RemoveWalletAction)
 }
 
-export function setPrimaryWallet(wallet: WalletState, address?: string): void {
-  const error =
-    validateWallet(wallet) || (address && validateString(address, 'address'))
-
-  if (error) {
-    throw error
-  }
+export async function setPrimaryWallet(
+    wallet: WalletState,
+    chains : Chain[],
+    address?: string): Promise<void> {
+  // const error =
+  //   validateWallet(wallet) || (address && validateString(address, 'address'))
+  //
+  // if (error) {
+  //   throw error
+  // }
 
   // if also setting the primary account
   if (address) {
     const account = wallet.accounts.find(ac => ac.address === address)
+    const chain = chains.find( chain => chain.id === wallet.chains[0].id)
+    if(!account.balance){
+      account.balance = await getBalance(address,chain, wallet.type)
+    }
 
     if (account) {
       wallet.accounts = [
-        account,
-        ...wallet.accounts.filter(({ address }) => address !== account.address)
+          account,
+        ...wallet.accounts
+        .map((acc) => ({ ...acc, balance : null }))
+        .filter(acc => {
+            return acc.address !== address
+            }
+        )
       ]
+
     }
   }
 
+
+  updateWallet(wallet.label,  wallet.type, { accounts : wallet.accounts })
   // add wallet will set it to first wallet since it already exists
   addWallet(wallet)
 }
@@ -188,11 +241,11 @@ export function updateAccountCenter(
 export function updateConnectModal(
   update: ConnectModalOptions | Partial<ConnectModalOptions>
 ): void {
-  const error = validateConnectModalUpdate(update)
-
-  if (error) {
-    throw error
-  }
+  // const error = validateConnectModalUpdate(update)
+  //
+  // if (error) {
+  //   throw error
+  // }
 
   const action = {
     type: UPDATE_CONNECT_MODAL,
@@ -308,7 +361,6 @@ export function removeNotification(id: Notification['id']): void {
   if (typeof id !== 'string') {
     throw new Error('Notification id must be of type string')
   }
-
   const action = {
     type: REMOVE_NOTIFICATION,
     payload: id
@@ -393,8 +445,50 @@ export function uniqueWalletsByLabel(
 ): WalletModule[] {
   return walletModuleList.filter(
     (wallet, i) =>
+      wallet &&
       walletModuleList.findIndex(
-        (innerWallet: WalletModule) => innerWallet.label === wallet.label
+        (innerWallet: WalletModule) =>
+          innerWallet
+          && innerWallet.label === wallet.label
+          && innerWallet.type === wallet.type
       ) === i
   )
+}
+
+export function updateTheme(theme: Theme): void {
+  const error = validateUpdateTheme(theme)
+  if (error) {
+    throw error
+  }
+
+  const themingObj = returnTheme(theme)
+  themingObj && handleThemeChange(themingObj)
+}
+
+export function updateAppMetadata(
+  update: AppMetadata| Partial<AppMetadata>
+): void {
+  const error = validateAppMetadataUpdate(update)
+
+  if (error) {
+    throw error
+  }
+
+  const action = {
+    type: UPDATE_APP_METADATA,
+    payload: update
+  }
+
+  dispatch(action as UpdateAppMetadataAction)
+}
+
+export function sendSignMessage(message : string): void {
+
+  if(!message || message.length === 0) return ;
+  const action = {
+    type: SEND_SIGN_MESSAGE ,
+    payload: message
+  }
+
+  dispatch(action as SendSignMessage)
 }

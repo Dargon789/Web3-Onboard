@@ -9,8 +9,9 @@ import {
   chainNamespaceValidation,
   chainIdValidation,
   chainValidation,
-  validate
-} from '@web3-onboard/common'
+  validate,
+  type AppMetadata
+} from '@subwallet-connect/common'
 
 import type {
   InitOptions,
@@ -26,7 +27,8 @@ import type {
   CustomNotificationUpdate,
   Notify,
   PreflightNotificationsOptions,
-  ConnectModalOptions
+  ConnectModalOptions,
+  Theme
 } from './types.js'
 
 const unknownObject = Joi.object().unknown()
@@ -60,11 +62,20 @@ const balance = Joi.any().allow(
   null
 )
 
+const secondaryTokens = Joi.any().allow(
+  Joi.object({
+    balance: Joi.string().required(),
+    icon: Joi.string()
+  }),
+  null
+)
+
 const account = Joi.object({
   address: Joi.string().required(),
   ens,
   uns,
-  balance
+  balance,
+  secondaryTokens
 })
 
 const chains = Joi.array()
@@ -108,7 +119,20 @@ const agreement = Joi.object({
 const appMetadata = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  icon: Joi.string().required(),
+  icon: Joi.string(),
+  logo: Joi.string(),
+  gettingStartedGuide: Joi.string(),
+  email: Joi.string(),
+  appUrl: Joi.string(),
+  explore: Joi.string(),
+  recommendedInjectedWallets: Joi.array().items(recommendedWallet),
+  agreement
+})
+
+const appMetadataUpdate = Joi.object({
+  name: Joi.string(),
+  description: Joi.string(),
+  icon: Joi.string(),
   logo: Joi.string(),
   gettingStartedGuide: Joi.string(),
   email: Joi.string(),
@@ -132,7 +156,8 @@ const commonPositions = Joi.string().valid(
   'topRight',
   'bottomRight',
   'bottomLeft',
-  'topLeft'
+  'topLeft',
+  'topCenter'
 )
 
 const gasPriceProbabilities = [70, 80, 90, 95, 99]
@@ -158,7 +183,9 @@ const accountCenterInitOptions = Joi.object({
   enabled: Joi.boolean(),
   position: commonPositions,
   minimal: Joi.boolean(),
-  containerElement: Joi.string()
+  containerElement: Joi.string(),
+  hideTransactionProtectionBtn: Joi.boolean(),
+  transactionProtectionInfoLink: Joi.string()
 })
 
 const accountCenter = Joi.object({
@@ -166,16 +193,42 @@ const accountCenter = Joi.object({
   position: commonPositions,
   expanded: Joi.boolean(),
   minimal: Joi.boolean(),
+  hideTransactionProtectionBtn: Joi.boolean(),
+  transactionProtectionInfoLink: Joi.string(),
   containerElement: Joi.string()
 })
 
 const connectModalOptions = Joi.object({
-  showSidebar: Joi.boolean()
+  showSidebar: Joi.boolean(),
+  disableClose: Joi.boolean(),
+  autoConnectLastWallet: Joi.boolean(),
+  autoConnectAllPreviousWallet: Joi.boolean(),
+  iDontHaveAWalletLink: Joi.string(),
+  wheresMyWalletLink: Joi.string(),
+  removeWhereIsMyWalletWarning: Joi.boolean(),
+  removeIDontHaveAWalletInfoLink: Joi.boolean(),
+  disableUDResolution: Joi.boolean()
 })
 
 const containerElements = Joi.object({
-  accountCenter: Joi.string()
+  accountCenter: Joi.string(),
+  connectModal: Joi.string()
 })
+
+const themeMap = Joi.object({
+  '--w3o-background-color': Joi.string(),
+  '--w3o-font-family': Joi.string(),
+  '--w3o-foreground-color': Joi.string(),
+  '--w3o-text-color': Joi.string(),
+  '--w3o-border-color': Joi.string(),
+  '--w3o-action-color': Joi.string(),
+  '--w3o-border-radius': Joi.string(),
+  '--w3o-background-color-item': Joi.string()
+})
+
+const presetTheme = Joi.string().valid('default', 'dark', 'light', 'system')
+
+const theme = Joi.alternatives().try(themeMap, presetTheme)
 
 const initOptions = Joi.object({
   wallets: walletInit,
@@ -185,7 +238,9 @@ const initOptions = Joi.object({
   apiKey: Joi.string(),
   accountCenter: Joi.object({
     desktop: accountCenterInitOptions,
-    mobile: accountCenterInitOptions
+    mobile: accountCenterInitOptions,
+    hideTransactionProtectionBtn: Joi.boolean(),
+    transactionProtectionInfoLink: Joi.string()
   }),
   notify: [notifyOptions, notify],
   gas: Joi.object({
@@ -196,30 +251,43 @@ const initOptions = Joi.object({
   containerElements: containerElements,
   transactionPreview: Joi.object({
     patchProvider: Joi.function().required(),
-    init: Joi.function().required()
-  })
+    init: Joi.function().required(),
+    previewTransaction: Joi.function()
+  }),
+  theme: theme,
+  disableFontDownload: Joi.boolean(),
+  unstoppableResolution: Joi.function()
 })
 
 const connectOptions = Joi.object({
-  autoSelect: Joi.alternatives()
-    .try(
-      Joi.object({
-        label: Joi.string().required(),
-        disableModals: Joi.boolean()
-      }),
-      Joi.string()
-    )
-    .required()
+  autoSelect: Joi.alternatives().try(
+    Joi.object({
+      label: Joi.string().required(),
+      disableModals: Joi.boolean()
+    }),
+    Joi.string()
+  )
 })
 
 const disconnectOptions = Joi.object({
-  label: Joi.string().required()
+  label: Joi.string().required(),
+  type: Joi.string().required()
 }).required()
+
+const secondaryTokenValidation = Joi.object({
+  address: Joi.string().required(),
+  icon: Joi.string().optional()
+})
 
 const setChainOptions = Joi.object({
   chainId: chainIdValidation.required(),
   chainNamespace: chainNamespaceValidation,
-  wallet: Joi.string()
+  wallet: Joi.string(),
+  rpcUrl: Joi.string(),
+  label: Joi.string(),
+  token: Joi.string(),
+  protectedRpcUrl: Joi.string(),
+  secondaryTokens: Joi.array().max(5).items(secondaryTokenValidation).optional()
 })
 
 const customNotificationUpdate = Joi.object({
@@ -314,6 +382,9 @@ export function validateSetChainOptions(data: {
   chainId: ChainId | DecimalChainId
   chainNamespace?: string
   wallet?: WalletState['label']
+  rpcUrl?: string
+  label?: string
+  token?: string
 }): ValidateReturn {
   return validate(setChainOptions, data)
 }
@@ -377,4 +448,14 @@ export function validateCustomNotification(
 
 export function validateUpdateBalances(data: WalletState[]): ValidateReturn {
   return validate(wallets, data)
+}
+
+export function validateUpdateTheme(data: Theme): ValidateReturn {
+  return validate(theme, data)
+}
+
+export function validateAppMetadataUpdate(
+  data: AppMetadata | Partial<AppMetadata>
+): ValidateReturn {
+  return validate(appMetadataUpdate, data)
 }

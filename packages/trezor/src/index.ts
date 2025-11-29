@@ -1,4 +1,4 @@
-import { Account, Asset, ScanAccountsOptions } from '@web3-onboard/hw-common'
+import { Account, Asset, ScanAccountsOptions } from '@subwallet-connect/hw-common'
 import type { StaticJsonRpcProvider } from '@ethersproject/providers'
 import type { TransactionRequest } from '@ethersproject/providers'
 import type {
@@ -17,13 +17,19 @@ import type {
   Platform,
   TransactionObject,
   WalletInit
-} from '@web3-onboard/common'
+} from '@subwallet-connect/common'
 
 interface TrezorOptions {
   email: string
   appUrl: string
   customNetwork?: CustomNetwork
   filter?: Platform[]
+  containerElement?: string
+  /**
+   * A number that defines the amount of consecutive empty addresses displayed
+   * within the Account Select modal. Default is 5
+   */
+  consecutiveEmptyAccountThreshold?: number
 }
 
 const TREZOR_DEFAULT_PATH = "m/44'/60'/0'/0"
@@ -84,15 +90,18 @@ const getAccount = async (
 const getAddresses = async (
   account: AccountData,
   asset: Asset,
-  provider: StaticJsonRpcProvider
+  provider: StaticJsonRpcProvider,
+  consecutiveEmptyAccounts: number,
+  accountIdxStart: number
 ): Promise<Account[]> => {
   const accounts = []
-  let index = 0
+  let index = accountIdxStart
   let zeroBalanceAccounts = 0
 
   // Iterates until a 0 balance account is found
-  // Then adds 4 more 0 balance accounts to the array
-  while (zeroBalanceAccounts < 5) {
+  // Then adds 4 (whatever consecutiveEmptyAccountThreshold is set to) more
+  // 0 balance accounts to the array
+  while (zeroBalanceAccounts < consecutiveEmptyAccounts) {
     const acc = await getAccount(account, asset, index, provider)
     if (
       acc &&
@@ -117,13 +126,21 @@ function trezor(options: TrezorOptions): WalletInit {
   const getIcon = async () => (await import('./icon.js')).default
 
   return ({ device }) => {
-    const { email, appUrl, customNetwork, filter } = options || {}
+    const {
+      email,
+      appUrl,
+      customNetwork,
+      filter,
+      containerElement,
+      consecutiveEmptyAccountThreshold
+    } = options || {}
 
     if (!email || !appUrl) {
       throw new Error(
         'Email and AppUrl required in Trezor options for Trezor Wallet Connection'
       )
     }
+    const consecutiveEmptyAccounts = consecutiveEmptyAccountThreshold || 5
 
     const filtered =
       Array.isArray(filter) &&
@@ -135,31 +152,32 @@ function trezor(options: TrezorOptions): WalletInit {
 
     return {
       label: 'Trezor',
+      type : 'evm',
       getIcon,
       getInterface: async ({ EventEmitter, chains }) => {
-        const { default: Trezor } = await import('trezor-connect')
-        const { Transaction, FeeMarketEIP1559Transaction } = await import(
+        const { default: Trezor } = await import('@trezor/connect-web')
+        const {  Transaction, FeeMarketEIP1559Transaction } = await import(
           '@ethereumjs/tx'
-        )
+          )
 
         const { createEIP1193Provider, ProviderRpcError } = await import(
-          '@web3-onboard/common'
-        )
+          '@subwallet-connect/common'
+          )
 
-        const { accountSelect } = await import('@web3-onboard/hw-common')
+        const { accountSelect } = await import('@subwallet-connect/hw-common')
 
         const {
           getCommon,
           bigNumberFieldsToStrings,
           getHardwareWalletProvider
-        } = await import('@web3-onboard/hw-common')
+        } = await import('@subwallet-connect/hw-common')
 
         const ethUtil = await import('ethereumjs-util')
         const { compress } = (await import('eth-crypto')).publicKey
 
         const { StaticJsonRpcProvider } = await import(
           '@ethersproject/providers'
-        )
+          )
 
         // @ts-ignore
         const TrezorConnect = Trezor.default || Trezor
@@ -180,7 +198,8 @@ function trezor(options: TrezorOptions): WalletInit {
         const scanAccounts = async ({
           derivationPath,
           chainId,
-          asset
+          asset,
+          accountIdxStart
         }: ScanAccountsOptions): Promise<Account[]> => {
           currentChain = chains.find(({ id }) => id === chainId) || currentChain
           ethersProvider = new StaticJsonRpcProvider(currentChain.rpcUrl)
@@ -210,7 +229,9 @@ function trezor(options: TrezorOptions): WalletInit {
               path: derivationPath
             },
             asset,
-            ethersProvider
+            ethersProvider,
+            consecutiveEmptyAccounts,
+            accountIdxStart
           )
         }
 
@@ -219,7 +240,8 @@ function trezor(options: TrezorOptions): WalletInit {
             basePaths: DEFAULT_BASE_PATHS,
             assets,
             chains,
-            scanAccounts
+            scanAccounts,
+            containerElement
           })
 
           if (
@@ -467,7 +489,7 @@ function trezor(options: TrezorOptions): WalletInit {
                 reject(
                   new Error(
                     (response.payload && response.payload.error) ||
-                      'There was an error signing a message'
+                    'There was an error signing a message'
                   )
                 )
               }
@@ -476,7 +498,7 @@ function trezor(options: TrezorOptions): WalletInit {
         }
 
         const trezorProvider = getHardwareWalletProvider(
-          () => currentChain?.rpcUrl
+          () => currentChain.rpcUrl || ''
         )
 
         const provider = createEIP1193Provider(trezorProvider, {

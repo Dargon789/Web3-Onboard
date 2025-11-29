@@ -1,3 +1,4 @@
+
 <script lang="ts">
   import { shareReplay, startWith } from 'rxjs/operators'
   import { connectWallet$, switchChainModal$, wallets$ } from '../streams.js'
@@ -27,17 +28,23 @@
   const setPositioningDefaults = (targetComponentVariable: string) => {
     return {
       topLeft: `
-        top: var(--${targetComponentVariable}-position-top, 0); 
+        top: var(--${targetComponentVariable}-position-top, 24px);
         left: var(--${targetComponentVariable}-position-left, 0);`,
       topRight: `
-        top: var(--${targetComponentVariable}-position-top, 0); 
+        top: var(--${targetComponentVariable}-position-top, 24px);
         right: var(--${targetComponentVariable}-position-right, 0);`,
       bottomRight: `
-        bottom: var(--${targetComponentVariable}-position-bottom, 0); 
+        bottom: var(--${targetComponentVariable}-position-bottom, 0);
         right: var(--${targetComponentVariable}-position-right, 0);`,
       bottomLeft: `
-        bottom: var(--${targetComponentVariable}-position-bottom, 0); 
-        left: var(--${targetComponentVariable}-position-left, 0);`
+        bottom: var(--${targetComponentVariable}-position-bottom, 0);
+        left: var(--${targetComponentVariable}-position-left, 0);`,
+      topCenter:
+      ` top: var(--${targetComponentVariable}-position-top, 24px);
+        left: var(--${targetComponentVariable}-position-center, 50%);
+        transform: translate(-50%, -50%);
+      `
+
     }
   }
 
@@ -93,47 +100,57 @@
     containerElements &&
     containerElements.accountCenter
 
-  if (accountCenterMountToElement) {
-    const accountCenter = document.createElement('onboard-account-center')
-    const target = accountCenter.attachShadow({ mode: 'open' })
+  const attachCompToDom = (
+    domEl: HTMLElement,
+    targetEl: string,
+    component: Promise<any>,
+    compSettings: unknown
+  ) => {
+    const target = domEl.attachShadow({ mode: 'open' })
 
     let getW3OEl = document.querySelector('onboard-v2')
     let w3OStyleSheets = getW3OEl.shadowRoot.styleSheets
-    const accountCenterStyleSheet = new CSSStyleSheet()
+    const copiedStyleSheet = new CSSStyleSheet()
 
     // Copy Onboard stylesheets over to AccountCenter shadow DOM
     Object.values(w3OStyleSheets).forEach(sheet => {
       const styleRules = Object.values(sheet.cssRules)
-      styleRules.forEach(rule =>
-        accountCenterStyleSheet.insertRule(rule.cssText)
-      )
+      styleRules.forEach(rule => copiedStyleSheet.insertRule(rule.cssText))
     })
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    target.adoptedStyleSheets = [accountCenterStyleSheet]
+    target.adoptedStyleSheets = [copiedStyleSheet]
 
-    const containerElement = document.querySelector(accountCenterMountToElement)
+    const containerElement = document.querySelector(targetEl)
 
-    containerElement.appendChild(accountCenter)
+    containerElement.appendChild(domEl)
     if (!containerElement) {
-      throw new Error(
-        `Element with query ${accountCenterMountToElement} does not exist.`
-      )
+      throw new Error(`Element with query ${targetEl} does not exist.`)
     }
 
     const getACComp = async () => {
-      let acComponent = await accountCenterComponent
-      if (acComponent) {
-        new acComponent({
+      let newComp = await component
+      if (newComp) {
+        new newComp({
           target,
           props: {
-            settings: $accountCenter$,
+            settings: compSettings,
             mountInContainer: true
           }
         })
       }
     }
     getACComp()
+  }
+
+  if (accountCenterMountToElement) {
+    const accountCenter = document.createElement('onboard-account-center')
+    attachCompToDom(
+      accountCenter,
+      accountCenterMountToElement,
+      accountCenterComponent,
+      $accountCenter$
+    )
   }
 </script>
 
@@ -298,7 +315,7 @@
   :global(a) {
     color: var(
       --onboard-link-color,
-      var(--onboard-primary-500, var(--primary-500))
+      var(--onboard-primary-500, var(--primary-2))
     );
     text-decoration: none;
   }
@@ -320,37 +337,86 @@
   }
 
   :global(.onboard-button-primary) {
-    background: var(--onboard-white, var(--white));
+    background: var(--onboard-primary-500, var(--primary-2));
     padding: calc(var(--onboard-spacing-5, var(--spacing-5)) - 1px)
       calc(var(--onboard-spacing-4, var(--spacing-4)) - 1px);
-    color: var(--onboard-gray-500, var(--gray-500));
+    color:  var(--white);
     font-size: var(--onboard-font-size-6, var(--font-size-6));
     line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
-    border: 1px solid var(--onboard-gray-500, var(--gray-500));
-    font-weight: 700;
+    border: 1px solid transparent;
+    font-weight: 600;
+    height: 40px;
+    border-radius: var(--border-radius-1);
   }
 
   :global(.button-neutral-solid) {
     width: 100%;
     border-radius: 8px;
-    background: var(--onboard-gray-500, var(--gray-500));
+    height: 52px;
+    margin-top: 0 !important;
+    background: var(--gray-800);
+    padding: var(--spacing-4);
     color: var(--onboard-white, var(--white));
     line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
   }
 
   :global(.button-neutral-solid-b) {
     width: 100%;
+    height: 52px;
+    padding: var(--spacing-4);
+    margin-top: 0 !important;
     background: var(--onboard-gray-100, var(--gray-100));
     color: var(--onboard-gray-500, var(--gray-500));
     line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
   }
 
+  :global(.button-neutral-danger){
+    height: 52px;
+    width: 100%;
+    padding: var(--spacing-4);
+    margin-top: 0 !important;
+    border-radius: var(--border-radius-5);
+    background: var(--danger-600);
+    color: var(--onboard-white, var(--white));
+    line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
+  }
+
+  :global(.button-neutral-confirm){
+    height: 52px;
+    width: 100%;
+    padding: var(--spacing-4);
+    margin-top: 0 !important;
+    border-radius: var(--border-radius-5);
+    background: var(--primary-2);
+    color: var(--onboard-white, var(--white));
+    line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
+  }
+
+  :global(.button-neutral-success){
+    height: 52px;
+    width: 100%;
+    padding: var(--spacing-4);
+    margin-top: 0 !important;
+    border-radius: var(--border-radius-5);
+    background: var(--success-500);
+    color: var(--onboard-white, var(--white));
+    line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
+  }
+
+
   :global(button.rounded) {
     border-radius: 24px;
   }
 
+  :global(.button-neutral-danger:hover) {
+    background: var(--danger-500);
+  }
+  :global(.button-neutral-confirm:hover) {
+    background: var(--primary-3);
+  }
+
   :global(.button-neutral-solid:hover) {
-    background: var(--onboard-gray-700, var(--gray-700));
+    background: var(--onboard-gray-500, var(--gray-500));
   }
   :global(.button-neutral-solid-b:hover) {
     background: var(--onboard-gray-200, var(--gray-200));
@@ -368,9 +434,13 @@
   .container {
     padding: 16px;
     font-family: var(--onboard-font-family-normal, var(--font-family-normal));
-    width: 100%;
     pointer-events: none;
     touch-action: none;
+    width: 100%;
+  }
+
+  .z-indexed-notify{
+    z-index: 10000;
   }
 
   .z-indexed {
@@ -402,7 +472,7 @@
     style="top: 0; right: 0; {device.type === 'mobile'
       ? 'padding-bottom: 0;'
       : ''} "
-    id="transaction-preview-container"
+    id="w3o-transaction-preview-container"
   />
 {/if}
 
@@ -430,20 +500,9 @@
       {/await}
     {/if}
     {#if $accountCenter$.position.includes('bottom')}
-      <div id="transaction-preview-container" style="margin-bottom: 8px;" />
+      <div id="w3o-transaction-preview-container6" style="margin-bottom: 8px;" />
     {/if}
-    <div
-      style={!$accountCenter$.expanded &&
-      $accountCenter$.minimal &&
-      $accountCenter$.position.includes('Right')
-        ? 'margin-left: auto'
-        : !$accountCenter$.expanded &&
-          $accountCenter$.minimal &&
-          $accountCenter$.position.includes('Left')
-        ? 'margin-right: auto'
-        : ''}
-      id="account-center-with-notify"
-    >
+    <div id="account-center-with-notify">
       {#await accountCenterComponent then AccountCenter}
         {#if AccountCenter}
           <svelte:component this={AccountCenter} />
@@ -451,7 +510,7 @@
       {/await}
     </div>
     {#if $accountCenter$.position.includes('top')}
-      <div id="transaction-preview-container" style="margin-top: 8px;" />
+      <div id="w3o-transaction-preview-container5" style="margin-top: 8px;" />
     {/if}
     {#if $notify$.position.includes('top') && $accountCenter$.position.includes('top') && samePositionOrMobile}
       {#await notifyComponent then Notify}
@@ -479,35 +538,25 @@
       : ''} "
   >
     {#if $accountCenter$.position.includes('bottom')}
-      <div id="transaction-preview-container" style="margin-bottom: 8px;" />
+      <div id="w3o-transaction-preview-container4" style="margin-bottom: 8px;" />
     {/if}
-    <div
-      style={!$accountCenter$.expanded &&
-      $accountCenter$.minimal &&
-      $accountCenter$.position.includes('Right')
-        ? 'margin-left: auto'
-        : !$accountCenter$.expanded &&
-          $accountCenter$.minimal &&
-          $accountCenter$.position.includes('Left')
-        ? 'margin-right: auto'
-        : ''}
-    >
+    <div>
       {#if $accountCenter$.enabled && $wallets$.length}
         {#await accountCenterComponent then AccountCenter}
           {#if AccountCenter}
-            <svelte:component this={AccountCenter} />
+          <svelte:component this={AccountCenter} />
           {/if}
         {/await}
       {/if}
     </div>
     {#if $accountCenter$.position.includes('top')}
-      <div id="transaction-preview-container" style="margin-top: 8px;" />
+      <div id="w3o-transaction-preview-container3" style="margin-top: 8px;" />
     {/if}
   </div>
 {/if}
 {#if displayNotifySeparate}
   <div
-    class="container flex flex-column fixed z-indexed"
+    class="container flex flex-column fixed z-indexed-notify"
     style="{setPositioningDefaults(notifyPositioning)[
       $notify$.position
     ]}; {device.type === 'mobile' && $notify$.position.includes('top')
@@ -517,7 +566,7 @@
       : ''} "
   >
     {#if $notify$.position.includes('top')}
-      <div id="transaction-preview-container" />
+      <div id="w3o-transaction-preview-container2" />
     {/if}
     {#await notifyComponent then Notify}
       {#if Notify}
@@ -530,7 +579,7 @@
       {/if}
     {/await}
     {#if $notify$.position.includes('bottom')}
-      <div id="transaction-preview-container" />
+      <div id="w3o-transaction-preview-container1" />
     {/if}
   </div>
 {/if}

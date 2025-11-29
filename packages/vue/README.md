@@ -1,26 +1,32 @@
-# @web3-onboard/vue
+<a href="https://onboard.blocknative.com/">
+  <img alt="Web3-Onboard UI Components" src="https://github.com/blocknative/web3-onboard/blob/develop/assets/core.svg?raw=true" />
+</a>
+
+# @subwallet-connect/vue
 
 A collection of composable functions for implementing web3-onboard in to a Vue project; compatible both with Vue 2 + composition-api and Vue 3
 
 ## Install Modules
 
 **NPM**
-`npm i @web3-onboard/vue @web3-onboard/injected-wallets ethers`
+`npm i @subwallet-connect/vue @subwallet-connect/injected-wallets ethers`
 
 **Yarn**
-`yarn add @web3-onboard/vue @web3-onboard/injected-wallets ethers`
+`yarn add @subwallet-connect/vue @subwallet-connect/injected-wallets ethers`
 
 ## Quickstart
 
 ```typescript
-import { init } from '@web3-onboard/vue'
-import injectedModule from '@web3-onboard/injected-wallets'
+import { init } from '@subwallet-connect/vue'
+import injectedModule from '@subwallet-connect/injected-wallets'
 
 const injected = injectedModule()
 
 // Only one RPC endpoint required per chain
 const rpcAPIKey = '<INFURA_KEY>' || '<ALCHEMY_KEY>'
-const rpcUrl = `https://eth-mainnet.g.alchemy.com/v2/${rpcAPIKey}` || `https://mainnet.infura.io/v3/${rpcAPIKey}`
+const rpcUrl =
+  `https://eth-mainnet.g.alchemy.com/v2/${rpcAPIKey}` ||
+  `https://mainnet.infura.io/v3/${rpcAPIKey}`
 
 const web3Onboard = init({
   wallets: [injected],
@@ -30,14 +36,21 @@ const web3Onboard = init({
       token: 'ETH',
       label: 'Ethereum Mainnet',
       rpcUrl
+    },
+    {
+      id: '0x2105',
+      token: 'ETH',
+      label: 'Base',
+      rpcUrl: 'https://mainnet.base.org'
     }
   ]
 })
 
-const { wallets, connectWallet, disconnectConnectedWallet, connectedWallet } =
-  useOnboard()
+const { wallets, connectWallet, disconnectConnectedWallet, connectedWallet } = useOnboard()
 
 if (connectedWallet) {
+  // if using ethers v6 this is:
+  // ethersProvider = new ethers.BrowserProvider(wallet.provider, 'any')
   const ethersProvider = new ethers.providers.Web3Provider(
     connectedWallet.provider,
     'any'
@@ -50,13 +63,13 @@ if (connectedWallet) {
 
 ## `init`
 
-The `init` function initializes `web3-onboard` and makes it available to the `useOnboard()` composable. For references check out the [initialization docs for `@web3-onboard/core`](../core/README.md#initialization)
+The `init` function initializes `web3-onboard` and makes it available to the `useOnboard()` composable. For references check out the [initialization docs for `@subwallet-connect/core`](../core/README.md#initialization)
 
 ### Example usage
 
 ```typescript
-import { init } from '@web3-onboard/vue'
-import injectedModule from '@web3-onboard/injected-wallets'
+import { init } from '@subwallet-connect/vue'
+import injectedModule from '@subwallet-connect/injected-wallets'
 
 const injected = injectedModule()
 const infuraKey = '<INFURA_KEY>'
@@ -82,31 +95,28 @@ const web3Onboard = init({
 ### Example usage
 
 ```typescript
-import { useOnboard } from '@web3-onboard/vue'
+import { useOnboard } from '@subwallet-connect/vue'
+
 // Use the composable
 const onboard = useOnboard()
+
 // Or destructure it
-const { wallets, connectWallet, disconnectConnectedWallet, connectedWallet } =
-  useOnboard()
+const { wallets, connectWallet, disconnectConnectedWallet, connectedWallet } = useOnboard()
+
 // do stuff
 ```
 
 ### `connectWallet`
 
-Function to open the onboard modal and connect to a wallet provider. For reference check out the [connecting a wallet for `@web3-onboard/core`](../core/README.md#connecting-a-wallet)
+Function to open the onboard modal and connect to a wallet provider. For reference check out the [connecting a wallet for `@subwallet-connect/core`](../core/README.md#connecting-a-wallet)
 
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { connectWallet } = useOnboard()
-    const connect = async () => connectWallet()
-    return { connect }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { connectWallet: connect } = useOnboard()
 </script>
 
 <template>
@@ -121,14 +131,10 @@ Computed property that contains the current chain to which `connectedWallet` is 
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { connectedChain } = useOnboard()
-    return { connectedChain }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { connectedChain } = useOnboard()
 </script>
 
 <template>
@@ -143,14 +149,10 @@ Computed property that contains the latest connected wallet
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { connectedWallet } = useOnboard()
-    return { connectedWallet }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { connectedWallet } = useOnboard()
 </script>
 
 <template>
@@ -165,14 +167,10 @@ Readonly boolean ref that tracks the state of the wallet connection status
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { connectingWallet } = useOnboard()
-    return { connectingWallet }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { connectingWallet } = useOnboard()
 </script>
 
 <template>
@@ -187,15 +185,11 @@ Function to disconnect a specific wallet
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { disconnectWallet } = useOnboard()
-    const disconnect = async () => disconnectWallet('MetaMask')
-    return { disconnect }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { disconnectWallet } = useOnboard()
+const disconnect = async () => disconnectWallet('MetaMask')
 </script>
 
 <template>
@@ -210,14 +204,10 @@ Function to disconnect the `connectedWallet`
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { disconnectConnectedWallet } = useOnboard()
-    return { disconnectConnectedWallet }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { disconnectConnectedWallet } = useOnboard()
 </script>
 
 <template>
@@ -234,14 +224,10 @@ Function that returns the current chain a wallet is connected to
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { getChain } = useOnboard()
-    return { getChain }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { getChain } = useOnboard()
 </script>
 
 <template>
@@ -256,15 +242,11 @@ Function to set the chain of a wallet
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { setChain } = useOnboard()
-    const set = () => setChain({ wallet: 'MetaMask', chainId: '0x1' })
-    return { set }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { setChain } = useOnboard()
+const set = () => setChain({ wallet: 'MetaMask', chainId: '0x1' })
 </script>
 
 <template>
@@ -279,14 +261,10 @@ Readonly boolean ref that tracks the status of setting the chain
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { settingChain } = useOnboard()
-    return { settingChain }
-  }
-}
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { settingChain } = useOnboard()
 </script>
 
 <template>
@@ -301,38 +279,34 @@ Readonly ref that contains every wallet that has been connected
 ### Example usage
 
 ```vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { wallets } = useOnboard()
-    return { wallets }
-  }
-}
-```
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
 
-### `alreadyConnectedWallets`
-
-Readonly ref that contains every wallet that user connected to in the past; useful to reconnect wallets automatically after a reload
-
-### Example usage
-
-```
-vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { alreadyConnectedWallets } = useOnboard()
-    return { alreadyConnectedWallets }
-  }
-}
+const { wallets } = useOnboard()
 </script>
 
 <template>
   <div v-for="wallet in wallets">
-    <span>Label: {{wallet.label}}</span>
+    <span>Label: {{ wallet.label }}</span>
   </div>
+</template>
+```
+
+### `alreadyConnectedWallets`
+
+Readonly ref that contains every wallet that user connected to in the past, useful to reconnect wallets automatically after a reload
+
+### Example usage
+
+```vue
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { alreadyConnectedWallets } = useOnboard()
+</script>
+
+<template>
+    <span>{{ alreadyConnectedWallets }}</span>
 </template>
 ```
 
@@ -342,16 +316,11 @@ Readonly ref that contains the last time that the user connected a wallet in mil
 
 ### Example usage
 
-```
-vue
-<script>
-import { useOnboard } from '@web3-onboard/vue'
-export default {
-  setup() {
-    const { lastConnectedTimestamp } = useOnboard()
-    return { lastConnectedTimestamp }
-  }
-}
+```vue
+<script setup>
+import { useOnboard } from '@subwallet-connect/vue'
+
+const { lastConnectedTimestamp } = useOnboard()
 </script>
 
 <template>

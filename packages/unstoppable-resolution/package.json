@@ -1,0 +1,41 @@
+{
+  "name": "@subwallet-connect/unstoppable-resolution",
+  "version": "1.0.7",
+  "description": "Adds Unstoppable Domain resolution for a wallet address, similar to ENS resolution",
+  "keywords": [
+    "Unstoppable Domain",
+    "Ethereum",
+    "Polygon"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blocknative/web3-onboard.git",
+    "directory": "packages/unstoppable-resolution"
+  },
+  "homepage": "https://subwallet.app",
+  "bugs": {
+    "url": "https://github.com/blocknative/web3-onboard/issues"
+  },
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "browser": "dist/index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "type-check": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@subwallet-connect/common": "^1.0.7",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@unstoppabledomains/resolution": "^8.0"
+  },
+  "author": ""
+}

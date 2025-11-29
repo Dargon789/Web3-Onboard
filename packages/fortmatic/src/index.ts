@@ -1,4 +1,4 @@
-import type { WalletInit, APIKey, EIP1193Provider } from '@web3-onboard/common'
+import type { WalletInit, APIKey, EIP1193Provider } from '@subwallet-connect/common'
 
 function fortmatic(options: APIKey): WalletInit {
   const { apiKey } = options
@@ -6,6 +6,7 @@ function fortmatic(options: APIKey): WalletInit {
   return () => {
     return {
       label: 'Fortmatic',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async ({ EventEmitter, BigNumber, chains }) => {
         const { default: Fortmatic } = await import('fortmatic')
@@ -13,13 +14,13 @@ function fortmatic(options: APIKey): WalletInit {
           createEIP1193Provider,
           ProviderRpcErrorCode,
           ProviderRpcError
-        } = await import('@web3-onboard/common')
+        } = await import('@subwallet-connect/common')
 
         const emitter = new EventEmitter()
 
         let instance = new Fortmatic(apiKey, {
           chainId: parseInt(chains[0].id),
-          rpcUrl: chains[0].rpcUrl
+          rpcUrl: chains[0].rpcUrl || ''
         })
 
         let fortmaticProvider = instance.getProvider()
@@ -48,8 +49,8 @@ function fortmatic(options: APIKey): WalletInit {
               const [balance] = await instance.user.getBalances()
               return balance
                 ? BigNumber.from(balance.crypto_amount)
-                    .mul('1000000000000000000')
-                    .toString()
+                  .mul('1000000000000000000')
+                  .toString()
                 : '0'
             },
             wallet_switchEthereumChain: async ({ params }) => {
@@ -59,7 +60,7 @@ function fortmatic(options: APIKey): WalletInit {
               // re-instantiate instance with new network
               instance = new Fortmatic(apiKey, {
                 chainId: parseInt(chain.id),
-                rpcUrl: chain.rpcUrl
+                rpcUrl: chain.rpcUrl || ''
               })
 
               // get the provider again

@@ -56,12 +56,13 @@ export async function preflightNotifications(
   // check sufficient balance if required parameters are available
   if (balance && gas && price) {
     const transactionCost = gas.times(price).plus(value)
+    console.log(gas, price, balance);
 
     // if transaction cost is greater than the current balance
     if (transactionCost.gt(new BigNumber(balance))) {
       const eventCode = 'nsfFail'
 
-      addNotification(buildNotification(eventCode, id))
+      addNotification(buildNotification(eventCode, id, ''))
     }
   }
 
@@ -71,7 +72,7 @@ export async function preflightNotifications(
   if (txRequested) {
     const eventCode = 'txAwaitingApproval'
 
-    const newNotification = buildNotification(eventCode, txRequested.id)
+    const newNotification = buildNotification(eventCode, txRequested.id, '')
     addNotification(newNotification)
   }
 
@@ -84,13 +85,25 @@ export async function preflightNotifications(
     if (awaitingApproval) {
       const eventCode = 'txConfirmReminder'
 
-      const newNotification = buildNotification(eventCode, awaitingApproval.id)
+      const newNotification = buildNotification(eventCode, awaitingApproval.id, '')
       addNotification(newNotification)
     }
   }, reminderTimeout)
 
+
   const eventCode = 'txRequest'
-  addNotification(buildNotification(eventCode, id))
+  addNotification(buildNotification(eventCode, id, ''))
+  const resultFn = (hash_: string) => {
+    if (hash_) {
+      hash = hash_;
+      console.log(hash_);
+      addNotification(buildNotification('txConfirmed', id, ''));
+      setTimeout(()=>{
+        removeNotification(id)
+      }, 1500)
+      return hash;
+    }
+  }
 
   // if not provided with sendTransaction function,
   // resolve with transaction hash(or void) so dev can initiate transaction
@@ -100,7 +113,7 @@ export async function preflightNotifications(
   // get result and handle errors
   let hash
   try {
-    hash = await sendTransaction()
+    await sendTransaction(resultFn);
   } catch (error) {
     type CatchError = {
       message: string
@@ -108,30 +121,38 @@ export async function preflightNotifications(
     }
     const { eventCode, errorMsg } = extractMessageFromError(error as CatchError)
 
-    addNotification(buildNotification(eventCode, id))
-    console.error(errorMsg)
+    addNotification(buildNotification(eventCode, id, errorMsg))
+
+    console.log(errorMsg)
+
+    setTimeout(()=>{
+      removeNotification(id)
+    }, 1500)
+
     return
   }
 
   // Remove preflight notification if a resolves to hash
   // and let the SDK take over
-  removeNotification(id)
-  if (hash) {
-    return hash
-  }
-  return
+
+
+  return hash;
 }
 
-const buildNotification = (eventCode: string, id: string): Notification => {
+const buildNotification = (
+  eventCode: string,
+  id: string,
+  errorMessage: string
+): Notification => {
   return {
     eventCode,
     type: eventToType(eventCode),
     id,
     key: createKey(id, eventCode),
-    message: createMessageText(eventCode),
+    message: createMessageText(eventCode) || errorMessage,
     startTime: Date.now(),
     network: Object.keys(networkToChainId).find(
-      key => networkToChainId[key] === state.get().chains[0].id
+      key => networkToChainId[key] === state.get().wallets[0].chains[0].id
     ) as Network,
     autoDismiss: 0
   }
@@ -159,6 +180,8 @@ export function extractMessageFromError(error: {
   message: string
   stack: string
 }): { eventCode: string; errorMsg: string } {
+
+
   if (!error.stack || !error.message) {
     return {
       eventCode: 'txError',
@@ -175,6 +198,13 @@ export function extractMessageFromError(error: {
     }
   }
 
+  if(message.includes('Rejected by user')){
+    return {
+      eventCode: 'txSendFail',
+      errorMsg: 'Rejected by user'
+    }
+  }
+
   if (message.includes('transaction underpriced')) {
     return {
       eventCode: 'txUnderpriced',
@@ -183,7 +213,7 @@ export function extractMessageFromError(error: {
   }
 
   return {
-    eventCode: 'txError',
+    eventCode: 'txErrorTransaction',
     errorMsg: message
   }
 }

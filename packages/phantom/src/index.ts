@@ -1,10 +1,11 @@
-import { WalletInit, createEIP1193Provider } from '@web3-onboard/common'
+import { WalletInit, createEIP1193Provider } from '@subwallet-connect/common'
 
 function phantom(): WalletInit {
   if (typeof window === 'undefined') return () => null
   return () => {
     return {
       label: 'Phantom',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async () => {
         if ('phantom' in window) {

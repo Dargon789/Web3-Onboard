@@ -3,15 +3,13 @@ import type {
   WalletInit,
   EIP1193Provider,
   Platform
-} from '@web3-onboard/common'
-
-import type { providers } from 'ethers'
+} from '@subwallet-connect/common'
 
 import type {
   CustomNetwork,
   Account,
   ScanAccountsOptions
-} from '@web3-onboard/hw-common'
+} from '@subwallet-connect/hw-common'
 import { StaticJsonRpcProvider } from '@ethersproject/providers'
 
 interface CustomWindow extends Window {
@@ -58,11 +56,13 @@ const generateAccounts = async (
 }
 
 function dcent({
-  customNetwork,
-  filter
-}: {
+                 customNetwork,
+                 filter,
+                 containerElement
+               }: {
   customNetwork?: CustomNetwork
   filter?: Platform[]
+  containerElement?: string
 } = {}): WalletInit {
   const getIcon = async () => (await import('./icon.js')).default
 
@@ -78,6 +78,7 @@ function dcent({
 
     return {
       label: "D'CENT",
+      type : 'evm',
       getIcon,
       getInterface: async ({ EventEmitter, chains }) => {
         const eventEmitter = new EventEmitter()
@@ -87,7 +88,7 @@ function dcent({
           if (isMobile && !provider) {
             location.replace(
               'https://link.dcentwallet.com/DAppBrowser/?url=' +
-                document.location
+              document.location
             )
           }
           provider.on = eventEmitter.on.bind(eventEmitter)
@@ -98,29 +99,29 @@ function dcent({
 
         const { StaticJsonRpcProvider } = await import(
           '@ethersproject/providers'
-        )
+          )
 
         const { default: EthDcentKeyring } = await import('eth-dcent-keyring')
         const dcentKeyring = new EthDcentKeyring({})
 
         const { TransactionFactory: Transaction } = await import(
           '@ethereumjs/tx'
-        )
+          )
 
         const { getCommon, accountSelect } = await import(
-          '@web3-onboard/hw-common'
-        )
+          '@subwallet-connect/hw-common'
+          )
 
         const {
           createEIP1193Provider,
           ProviderRpcErrorCode,
           ProviderRpcError
-        } = await import('@web3-onboard/common')
+        } = await import('@subwallet-connect/common')
 
         let currentChain: Chain = chains[0]
         const scanAccounts = async ({
-          chainId
-        }: ScanAccountsOptions): Promise<Account[]> => {
+                                      chainId
+                                    }: ScanAccountsOptions): Promise<Account[]> => {
           currentChain =
             chains.find(({ id }: Chain) => id === chainId) || currentChain
 
@@ -135,7 +136,8 @@ function dcent({
             assets,
             chains,
             scanAccounts,
-            supportsCustomPath: false
+            supportsCustomPath: false,
+            containerElement
           })
           if (accounts.length) {
             eventEmitter.emit('accountsChanged', [accounts[0].address])
@@ -145,9 +147,9 @@ function dcent({
         }
 
         const request = async ({
-          method,
-          params
-        }: {
+                                 method,
+                                 params
+                               }: {
           method: string
           params: any
         }) => {

@@ -1,4 +1,4 @@
-# @web3-onboard/magic
+# @subwallet-connect/magic
 
 ## Wallet module for connecting Magic wallets to Onboard V2
 
@@ -11,7 +11,7 @@
 
 ### Install
 
-`npm i @web3-onboard/magic`
+`npm i @subwallet-connect/magic`
 
 Head over to https://magic.link/ and sign up to get an API key
 
@@ -27,8 +27,8 @@ type MagicInitOptions = {
 ## Usage
 
 ```typescript
-import Onboard from '@web3-onboard/core'
-import magicModule from '@web3-onboard/magic'
+import Onboard from '@subwallet-connect/core'
+import magicModule from '@subwallet-connect/magic'
 
 const magic = magicModule({
   apiKey: 'API_KEY',
@@ -85,8 +85,7 @@ The Magic Wallet Login styles can customized via [CSS variables](https://develop
   --login-modal-danger-500: #ff4f4f;
 
   /* FONTS */
-  --login-modal-font-family-normal: Sofia Pro;
-  --login-modal-font-family-light: Sofia Pro Light;
+  --login-modal-font-family-normal: Inter, sans-serif;
   --login-modal-font-size-5: 1rem;
   --login-modal-font-line-height-1: 24px;
 

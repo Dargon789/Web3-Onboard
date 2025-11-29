@@ -1,4 +1,4 @@
-import type { WalletInit, EIP1193Provider } from '@web3-onboard/common'
+import type { WalletInit, EIP1193Provider } from '@subwallet-connect/common'
 import type { MagicInitOptions } from './types.js'
 import { validateMagicInitOptions } from './validation.js'
 
@@ -16,6 +16,7 @@ function magic(options: MagicInitOptions): WalletInit {
   return () => {
     return {
       label: walletName,
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async ({ EventEmitter, BigNumber, chains }) => {
         const { Magic, RPCErrorCode } = await import('magic-sdk')
@@ -26,7 +27,7 @@ function magic(options: MagicInitOptions): WalletInit {
           createEIP1193Provider,
           ProviderRpcErrorCode,
           ProviderRpcError
-        } = await import('@web3-onboard/common')
+        } = await import('@subwallet-connect/common')
 
         const emitter = new EventEmitter()
 

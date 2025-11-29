@@ -1,11 +1,11 @@
-import Joi from 'joi'
+import Joi, {number} from 'joi'
 import type { SelectAccountOptions } from './types.js'
 
 import {
   validate,
   chainValidation,
   type ValidateReturn
-} from '@web3-onboard/common'
+} from '@subwallet-connect/common'
 
 const basePath = Joi.object({
   label: Joi.string().required(),
@@ -28,7 +28,9 @@ const selectAccountOptions = Joi.object({
   assets: assets,
   chains: chains,
   scanAccounts: Joi.function().arity(1).required(),
-  supportsCustomPath: Joi.bool()
+  supportsCustomPath: Joi.bool(),
+  consecutiveEmptyAccountThreshold: Joi.number(),
+  containerElement: Joi.string()
 })
 
 export const validateSelectAccountOptions = (

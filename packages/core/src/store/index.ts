@@ -3,7 +3,7 @@ import { distinctUntilKeyChanged, pluck, filter } from 'rxjs/operators'
 import { locale } from 'svelte-i18n'
 import { APP_INITIAL_STATE } from '../constants.js'
 import { notNullish } from '../utils.js'
-import type { Chain, WalletModule } from '@web3-onboard/common'
+import type { Chain, WalletModule } from '@subwallet-connect/common'
 
 import type {
   AppState,
@@ -18,7 +18,9 @@ import type {
   AddNotificationAction,
   RemoveNotificationAction,
   UpdateAllWalletsAction,
-  UpdateConnectModalAction
+  UpdateConnectModalAction,
+  UpdateChainsAction,
+  UpdateAppMetadataAction
 } from '../types.js'
 
 import {
@@ -35,8 +37,11 @@ import {
   SET_LOCALE,
   ADD_NOTIFICATION,
   REMOVE_NOTIFICATION,
-  UPDATE_ALL_WALLETS
+  UPDATE_ALL_WALLETS,
+  UPDATE_CHAINS,
+  UPDATE_APP_METADATA, SEND_SIGN_MESSAGE
 } from './constants.js'
+
 
 function reducer(state: AppState, action: Action): AppState {
   const { type, payload } = action
@@ -48,10 +53,21 @@ function reducer(state: AppState, action: Action): AppState {
         chains: [...state.chains, ...(payload as Chain[])]
       }
 
+    case UPDATE_CHAINS: {
+      const updatedChain = payload as UpdateChainsAction['payload']
+      const chains = state.chains
+      const index = chains.findIndex((chain) => chain.id === updatedChain.id)
+      chains[index] = updatedChain
+      return {
+        ...state,
+        chains
+      }
+    }
+
     case ADD_WALLET: {
       const wallet = payload as AddWalletAction['payload']
       const existingWallet = state.wallets.find(
-        ({ label }) => label === wallet.label
+        ({ label, type }) => label === wallet.label && type === wallet.type
       )
 
       return {
@@ -60,17 +76,19 @@ function reducer(state: AppState, action: Action): AppState {
           // add to front of wallets as it is now the primary wallet
           existingWallet || (payload as WalletState),
           // filter out wallet if it already existed
-          ...state.wallets.filter(({ label }) => label !== wallet.label)
+          ...state.wallets.filter(({ label, type }) =>
+            !( label === wallet.label && type === wallet.type))
         ]
       }
     }
 
     case UPDATE_WALLET: {
       const update = payload as UpdateWalletAction['payload']
-      const { id, ...walletUpdate } = update
+      const { id, type, ...walletUpdate } = update
 
       const updatedWallets = state.wallets.map(wallet =>
-        wallet.label === id ? { ...wallet, ...walletUpdate } : wallet
+        wallet.label === id && wallet.type === type ?
+          { ...wallet, ...walletUpdate } : wallet
       )
 
       return {
@@ -80,25 +98,25 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case REMOVE_WALLET: {
-      const update = payload as { id: string }
+      const update = payload as { id: string, type : WalletState['type'] }
 
       return {
         ...state,
-        wallets: state.wallets.filter(({ label }) => label !== update.id)
+        wallets: state.wallets.filter(({ label, type }) =>
+          label !== update.id && type === update.type)
       }
     }
 
     case UPDATE_ACCOUNT: {
       const update = payload as UpdateAccountAction['payload']
-      const { id, address, ...accountUpdate } = update
+      const { id, walletType, address, ...accountUpdate } = update
 
       const updatedWallets = state.wallets.map(wallet => {
-        if (wallet.label === id) {
+        if (wallet.label === id && wallet.type === walletType) {
           wallet.accounts = wallet.accounts.map(account => {
-            if (account.address === address) {
+            if (account && account.address === address) {
               return { ...account, ...accountUpdate }
             }
-
             return account
           })
         }
@@ -205,8 +223,27 @@ function reducer(state: AppState, action: Action): AppState {
       }
     }
 
+    case UPDATE_APP_METADATA: {
+      const update = payload as UpdateAppMetadataAction['payload']
+
+      return {
+        ...state,
+        appMetadata: {
+          ...state.appMetadata,
+          ...update
+        }
+      }
+    }
+
     case RESET_STORE:
       return APP_INITIAL_STATE
+
+    case SEND_SIGN_MESSAGE : {
+      state.wallets[0].accounts[0].message = payload as string;
+      return {
+        ...state
+      }
+    }
 
     default:
       throw new Error(`Unknown type: ${type} in appStore reducer`)

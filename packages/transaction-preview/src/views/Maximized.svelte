@@ -15,11 +15,64 @@
   export let destroyApp: () => void
   export let simResponse: MultiSimOutput
   export let startTime: number
+
+  let totalGasInEth = 0
+  let totalGasUsed = 0
+
   const device = getDevice()
+  const addCommasToNumber = (x: number): string => {
+    const parts = x.toString().split('.')
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const cleanBalance = (dirtyBalance: string): string => {
+    const formattedEth = ethers.utils.formatEther(dirtyBalance)
+    return roundAndCleanDecimals(formattedEth)
+  }
+
+  const roundAndCleanGas = (formattedValue: string): number => {
+    const roundedGwei = parseFloat(formattedValue).toFixed(7)
+    return Number(roundedGwei)
+  }
+
+  const roundAndCleanDecimals = (formattedValue: string): string => {
+    const roundedGwei = parseFloat(formattedValue).toFixed(6)
+    const removeEmptyDecimalPlaces = Number(roundedGwei)
+    return addCommasToNumber(removeEmptyDecimalPlaces)
+  }
+
+  const shortenAddress = (address: string): string => {
+    return `${address.slice(0, 6)}…${address.slice(-4)}`
+  }
+
+  const cleanGas = (gasComputed: number): number => {
+    const gweiToEther = ethers.utils.formatEther(gasComputed)
+    return roundAndCleanGas(gweiToEther)
+  }
+
+  const getCumulativeGasInEth = (index: number) => {
+    if (simResponse.transactions[index].type === 0) {
+      totalGasInEth += cleanGas(
+        simResponse.gasUsed[index] * simResponse.transactions[index].gasPrice
+      )
+    }
+    // if (simResponse.transactions[index].type === 2) {
+    //   totalGasInEth += cleanGas(
+    //     simResponse.gasUsed[index] *
+    //       (simResponse.transactions[index].baseFeePerGasGwei +
+    //         simResponse.transactions[index].maxPriorityFeePerGasGwei)
+    //   )
+    // }
+  }
+
+  const gasUsed = (index: number) => {
+    totalGasUsed += simResponse.gasUsed[index]
+  }
 
   const transactionOriginator = simResponse.transactions[0].from
   const balanceChanges = simResponse.netBalanceChanges.reduce(
-    (arr: NetBalanceChange[], changes: NetBalanceChange[]) => {
+    (arr: NetBalanceChange[], changes: NetBalanceChange[], index: number) => {
       if (changes.length) {
         changes.forEach(change => {
           if (
@@ -29,37 +82,19 @@
           }
         })
       }
+      getCumulativeGasInEth(index)
+      gasUsed(index)
       return arr
     },
     []
   )
-
-  function addCommasToNumber(x: number): string {
-    const parts = x.toString().split('.')
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    return parts.join('.')
-  }
-
-  const cleanBalance = (dirtyBalance: string): string => {
-    const gweiToEther = ethers.utils.formatEther(dirtyBalance)
-    const roundTo4Decimal = parseFloat(gweiToEther).toFixed(4)
-    const removeEmptyDecimalPlaces = Number(roundTo4Decimal)
-    return addCommasToNumber(removeEmptyDecimalPlaces)
-  }
-
-  const shortenAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
 </script>
 
 <style>
   .maximized {
-    font-family: var(--onboard-font-family-normal, var(--font-family-normal));
     pointer-events: all;
-    backdrop-filter: blur(5px);
     width: 100%;
     min-height: 3.5rem;
-    background: var(--onboard-gray-600, var(--gray-600));
     display: flex;
     flex-direction: column;
     position: relative;
@@ -67,7 +102,7 @@
   }
 
   .radius {
-    border-radius: var(--onboard-border-radius-4, var(--border-radius-4));
+    border-radius: inherit;
   }
 
   div.tp-close-btn {
@@ -103,48 +138,47 @@
     margin: auto;
   }
 
-  .tp-close-btn > .close-icon {
-    color: var(--onboard-gray-300, var(--gray-300));
+  .tp-close-btn .close-icon {
+    color: currentColor;
   }
 
-  .tp-close-btn:hover > .close-icon {
-    color: var(--onboard-gray-100, var(--gray-100));
+  .tp-close-btn:hover .close-icon {
+    color: currentColor;
   }
 
   .table-radius {
-    border-radius: var(--onboard-border-radius-5, var(--border-radius-5));
+    border-radius: var(--border-radius-5);
   }
 
   .bn-notify-notification-inner {
     padding: 0.75rem;
+    background: var(--foreground-color);
   }
   .details {
-    background: var(--onboard-gray-700, var(--gray-700));
     display: flex;
     flex-direction: column;
     padding: 0.75rem;
     gap: 0.5rem;
+    border-top: 1px solid var(--border-color);
   }
   .address-info {
     font-size: 0.75rem;
     font-weight: 400;
     line-height: 1rem;
     display: inline-flex;
-    color: var(--onboard-gray-200, var(--gray-200));
   }
   .details-cta {
-    color: var(--onboard-primary-400, var(--primary-400));
-    font-weight: 700;
+    color: inherit;
+    font-weight: 600;
     font-size: 0.875rem;
     display: flex;
     justify-content: flex-end;
-    background: var(--onboard-gray-700, var(--gray-700));
     flex-direction: row;
     align-items: center;
     padding: 0.5rem;
     gap: 0.5rem;
     height: 3rem;
-    border: 1px solid var(--onboard-gray-600, var(--gray-600));
+    border-top: 1px solid var(--border-color);
     flex: none;
     order: 2;
     align-self: stretch;
@@ -153,11 +187,11 @@
 
   table.balance-change-table {
     width: 100%;
-    background: var(--onboard-gray-600, var(--gray-600));
-    border: 1px solid var(--onboard-gray-500, var(--gray-500));
-    color: var(--onboard-gray-100, var(--gray-100));
     overflow: hidden;
     border-spacing: 0;
+    border: 1px solid transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
   }
 
   table.balance-change-table td,
@@ -166,6 +200,7 @@
     text-align: start;
     line-height: 1rem;
   }
+
   table.balance-change-table th {
     font-size: 0.75rem;
   }
@@ -174,16 +209,15 @@
   }
 
   table.balance-change-table td.token-text {
-    font-weight: 700;
+    font-weight: 600;
   }
 
   tbody > tr:not(:first-child) {
-    box-shadow: inset 0px 1px 0px var(--onboard-gray-500, var(--gray-500));
+    box-shadow: inset 0px 1px 0px var(--border-color);
   }
 
   table.balance-change-table thead {
-    background: var(--onboard-gray-500, var(--gray-500));
-    color: var(--onboard-gray-100, var(--gray-100));
+    background: var(--border-color);
   }
 
   .negative {
@@ -191,6 +225,12 @@
   }
   .positive {
     color: var(--onboard-success-500, var(--success-500));
+  }
+
+  .gas-used-value {
+    color: var(--text-color);
+    display: inline-block;
+    margin: 0 4px 0 0;
   }
 </style>
 
@@ -213,8 +253,8 @@
   </div>
   <div class="details">
     <div class="address-info">
-      {$_('maximized.sectionHeading', {
-        default: en.maximized.sectionHeading
+      {$_('maximized.balanceChangeHeading', {
+        default: en.maximized.balanceChangeHeading
       })}
       {shortenAddress(transactionOriginator)}
     </div>
@@ -251,6 +291,20 @@
               </tr>
             {/each}
           {/each}
+          {#if totalGasInEth && totalGasUsed}
+            <tr>
+              <td class="token-text">ETH</td>
+              <td class="negative"
+                >-{totalGasInEth}
+                <div class="gas-used-value">
+                  ({totalGasUsed}
+                  {$_('maximized.gasUsed', {
+                    default: en.maximized.gasUsed
+                  })})
+                </div></td
+              >
+            </tr>
+          {/if}
         {/if}
       </tbody>
     </table>

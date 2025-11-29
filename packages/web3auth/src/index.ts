@@ -3,23 +3,26 @@ import type {
   EIP1193Provider,
   ProviderAccounts,
   WalletInit
-} from '@web3-onboard/common'
+} from '@subwallet-connect/common'
 
-import type { Web3AuthCoreOptions } from '@web3auth/core'
-import type { ModalConfig, Web3Auth } from '@web3auth/modal'
+import type { Web3AuthOptions, ModalConfig } from '@web3auth/modal'
 import type { CustomChainConfig } from '@web3auth/base'
-import { LOGIN_MODAL_EVENTS } from '@web3auth/ui'
 
-type Web3AuthModuleOptions = Omit<Web3AuthCoreOptions, 'chainConfig'> & {
+type Web3AuthModuleOptions = Omit<Web3AuthOptions, 'chainConfig'> & {
   chainConfig?: Partial<CustomChainConfig> &
     Pick<CustomChainConfig, 'chainNamespace'>
   modalConfig?: Record<string, ModalConfig> | undefined
+  /**
+   * @deprecated use web3Auth native Z-Index config through
+   * uiConfig.modalZIndex
+   */
   loginModalZIndex?: string
 }
 
 function web3auth(options: Web3AuthModuleOptions): WalletInit {
   return () => ({
     label: 'Web3Auth',
+    type : 'evm',
     getIcon: async () => (await import('./icon.js')).default,
     getInterface: async ({ EventEmitter, chains }) => {
       const { Web3Auth } = await import('@web3auth/modal')
@@ -27,11 +30,13 @@ function web3auth(options: Web3AuthModuleOptions): WalletInit {
         '@web3auth/base'
       )
       const { createEIP1193Provider, ProviderRpcError, ProviderRpcErrorCode } =
-        await import('@web3-onboard/common')
+        await import('@subwallet-connect/common')
 
       const emitter = new EventEmitter()
 
       let [currentChain] = chains
+
+      const { loginModalZIndex, modalConfig } = options || {}
 
       const getChainConfig = ({
         rpcUrl,
@@ -52,32 +57,25 @@ function web3auth(options: Web3AuthModuleOptions): WalletInit {
         }
       })
 
-      const web3authCoreOptions = {
+      const modalZIndex = loginModalZIndex
+        ? loginModalZIndex
+        : options.uiConfig && options.uiConfig.modalZIndex
+        ? options.uiConfig.modalZIndex
+        : '50'
+
+      const web3authCoreOptions: Web3AuthOptions = {
         ...options,
         ...getChainConfig(currentChain)
       }
 
+      if (modalZIndex) {
+        typeof web3authCoreOptions.uiConfig !== 'object'
+          ? (web3authCoreOptions.uiConfig = { modalZIndex: modalZIndex })
+          : (web3authCoreOptions.uiConfig.modalZIndex = modalZIndex)
+      }
+
       let web3auth = new Web3Auth(web3authCoreOptions)
 
-      // There is no exposed z-index setter so we must set through modal events
-      // Tracking a permanent fix here - https://github.com/Web3Auth/web3auth-web/issues/1018
-      // subscribe to lifecycle events emitted by web3auth
-      const subscribeAuthEvents = (web3auth: Web3Auth) => {
-        // emitted when modal visibility changes.
-        web3auth.on(LOGIN_MODAL_EVENTS.MODAL_VISIBILITY, isVisible => {
-          if (isVisible) {
-            // Move to bottom of stack
-            setTimeout(() => {
-              const modal = document.getElementById('w3a-modal')
-              if (modal) {
-                modal.style.zIndex = options.loginModalZIndex || '50'
-              }
-            }, 10)
-          }
-        })
-      }
-      subscribeAuthEvents(web3auth)
-      const { modalConfig } = options || {}
       await web3auth.initModal(modalConfig)
 
       let provider: EIP1193Provider

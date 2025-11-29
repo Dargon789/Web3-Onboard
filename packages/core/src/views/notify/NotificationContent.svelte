@@ -52,16 +52,11 @@
   }
 
   .transaction-status {
-    color: var(
-      --notify-onboard-transaction-status,
-      var(--onboard-primary-100, var(--primary-100))
-    );
-    line-height: var(
-      --notify-onboard-font-size-5,
-      var(--onboard-font-size-5, var(--font-size-5))
-    );
+    color: var(--notify-onboard-transaction-status, inherit);
+    line-height: 24px;
     font-weight: 400;
     overflow: hidden;
+    width: 200px;
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;

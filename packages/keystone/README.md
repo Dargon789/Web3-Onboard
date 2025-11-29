@@ -1,16 +1,23 @@
-# @web3-onboard/keystone
+# @subwallet-connect/keystone
 
 ## Wallet module for connecting Keystone hardware wallets to web3-onboard
 
 ### Install
 
-`npm i @web3-onboard/keystone`
+`npm i @subwallet-connect/keystone`
 
 ### Options
 
 ```typescript
 type KeystoneOptions = {
   customNetwork?: CustomNetwork
+  filter?: Platform[]
+  containerElement?: string
+  /**
+   * A number that defines the amount of consecutive empty addresses displayed
+   * within the Account Select modal. Default is 5
+   */
+  consecutiveEmptyAccountThreshold?: number
 }
 
 interface CustomNetwork {
@@ -49,8 +56,8 @@ interface BootstrapNode {
 ### Usage
 
 ```typescript
-import Onboard from '@web3-onboard/core'
-import keystoneModule from '@web3-onboard/keystone'
+import Onboard from '@subwallet-connect/core'
+import keystoneModule from '@subwallet-connect/keystone'
 
 const keystone = keystoneModule()
 
@@ -71,8 +78,8 @@ console.log(connectedWallets)
 You may decide that on certain platforms you do not want to display this wallet as a selectable option. To do that you can use the `filter` init option which is an array of platforms that you would like this wallet to **not** be displayed to the end user:
 
 ```typescript
-import Onboard from '@web3-onboard/core'
-import keystoneModule from '@web3-onboard/keystone'
+import Onboard from '@subwallet-connect/core'
+import keystoneModule from '@subwallet-connect/keystone'
 
 const keystone = keystoneModule({ filter: ['Safari'] })
 

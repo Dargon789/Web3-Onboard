@@ -3,7 +3,7 @@ import type {
   DisconnectOptions,
   WalletState,
   ConnectedChain
-} from '@web3-onboard/core'
+} from '@subwallet-connect/core'
 import type { Ref, ComputedRef } from 'vue-demi'
 
 // Syntax sugar for Readonly Refs
@@ -12,7 +12,10 @@ type ReadonlyRef<T> = Readonly<Ref<T>>
 type SetChainOptions = {
   chainId: string
   chainNamespace?: string
-  wallet: string
+  wallet: string,
+  rpcUrl?: string,
+  label?: string,
+  token?: string
 }
 
 interface OnboardComposable {

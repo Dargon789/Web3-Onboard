@@ -1,4 +1,4 @@
-import type { Chain, Platform, WalletInit } from '@web3-onboard/common'
+import type { Chain, Platform, WalletInit } from '@subwallet-connect/common'
 import type { StaticJsonRpcProvider } from '@ethersproject/providers'
 import type { ETHAccountPath } from '@shapeshiftoss/hdwallet-core'
 import type { KeepKeyHDWallet } from '@shapeshiftoss/hdwallet-keepkey'
@@ -7,7 +7,7 @@ import type {
   ScanAccountsOptions,
   Account,
   Asset
-} from '@web3-onboard/hw-common'
+} from '@subwallet-connect/hw-common'
 
 const DEFAULT_PATH = `m/44'/60'/0'/0/0`
 
@@ -36,7 +36,19 @@ const errorMessages = {
 
 type ErrorCode = 'busy' | 'pairing'
 
-function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
+function keepkey({
+                   filter,
+                   containerElement,
+                   consecutiveEmptyAccountThreshold
+                 }: {
+  filter?: Platform[]
+  containerElement?: string
+  /**
+   * A number that defines the amount of consecutive empty addresses displayed
+   * within the Account Select modal. Default is 5
+   */
+  consecutiveEmptyAccountThreshold?: number
+} = {}): WalletInit {
   const getIcon = async () => (await import('./icon.js')).default
 
   return ({ device }) => {
@@ -49,12 +61,13 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
     if (filtered) return null
 
     return {
+      type: 'evm',
       label: 'KeepKey',
       getIcon,
       getInterface: async ({ EventEmitter, chains }) => {
         const { WebUSBKeepKeyAdapter } = await import(
           '@shapeshiftoss/hdwallet-keepkey-webusb'
-        )
+          )
 
         const {
           Keyring,
@@ -65,26 +78,27 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
         } = await import('@shapeshiftoss/hdwallet-core')
 
         const { createEIP1193Provider, ProviderRpcError } = await import(
-          '@web3-onboard/common'
-        )
+          '@subwallet-connect/common'
+          )
 
         const { accountSelect, entryModal } = await import(
-          '@web3-onboard/hw-common'
-        )
+          '@subwallet-connect/hw-common'
+          )
 
         const { bigNumberFieldsToStrings, getHardwareWalletProvider } =
-          await import('@web3-onboard/hw-common')
+          await import('@subwallet-connect/hw-common')
 
         const { utils } = await import('ethers')
 
         const { StaticJsonRpcProvider } = await import(
           '@ethersproject/providers'
-        )
+          )
         const ethUtil = await import('ethereumjs-util')
 
         const keyring = new Keyring()
         const keepKeyAdapter = WebUSBKeepKeyAdapter.useKeyring(keyring)
         const eventEmitter = new EventEmitter()
+        const consecutiveEmptyAccounts = consecutiveEmptyAccountThreshold || 10
 
         let keepKeyWallet: KeepKeyHDWallet
         let currentChain: Chain = chains[0]
@@ -166,22 +180,25 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
         }
 
         const getAllAccounts = async ({
-          derivationPath,
-          asset,
-          provider
+              derivationPath,
+              asset,
+              provider,
+              accountIdxStart
         }: {
           derivationPath: string
           asset: Asset
           provider: StaticJsonRpcProvider
+          accountIdxStart: number
         }) => {
           try {
-            let index = getAccountIdx(derivationPath)
+            const indexGetStartList = getAccountIdx(derivationPath);
+            let index = accountIdxStart > indexGetStartList ? accountIdxStart : indexGetStartList;
             let zeroBalanceAccounts = 0
             const accounts = []
 
             // Iterates until a 0 balance account is found
             // Then adds 4 more 0 balance accounts to the array
-            while (zeroBalanceAccounts < 5) {
+            while (zeroBalanceAccounts < consecutiveEmptyAccounts) {
               const acc = await getAccount({
                 accountIdx: index,
                 provider,
@@ -214,10 +231,11 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
         }
         let ethersProvider: StaticJsonRpcProvider
         const scanAccounts = async ({
-          derivationPath,
-          chainId,
-          asset
-        }: ScanAccountsOptions): Promise<Account[]> => {
+                                      derivationPath,
+                                      chainId,
+                                      asset,
+                                      accountIdxStart
+                                    }: ScanAccountsOptions): Promise<Account[]> => {
           if (!keepKeyWallet)
             throw new Error('Device must be connected before scanning accounts')
           currentChain = chains.find(({ id }) => id === chainId) || currentChain
@@ -245,7 +263,8 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
           return getAllAccounts({
             derivationPath,
             asset,
-            provider: ethersProvider
+            provider: ethersProvider,
+            accountIdxStart
           })
         }
 
@@ -254,7 +273,8 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
             basePaths: DEFAULT_BASE_PATHS,
             assets,
             chains,
-            scanAccounts
+            scanAccounts,
+            containerElement
           })
           if (!accounts) throw new Error('No accounts were found')
           if (accounts.length) {
@@ -286,9 +306,9 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
             message:
               message.slice(0, 2) === '0x'
                 ? // @ts-ignore - commonjs weirdness
-                  (ethUtil.default || ethUtil)
-                    .toBuffer(message)
-                    .toString('utf8')
+                (ethUtil.default || ethUtil)
+                  .toBuffer(message)
+                  .toString('utf8')
                 : message
           })
 
@@ -296,7 +316,7 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
         }
 
         const keepKeyProvider = getHardwareWalletProvider(
-          () => currentChain.rpcUrl
+          () => currentChain.rpcUrl || ''
         )
 
         const provider = createEIP1193Provider(keepKeyProvider, {
@@ -376,10 +396,10 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
               !transactionObject || !transactionObject.hasOwnProperty('from')
                 ? accounts[0]
                 : (accounts.find(
-                    account =>
-                      account.address.toLocaleLowerCase() ===
-                      transactionObject.from.toLocaleLowerCase()
-                  ) as Account)
+                  account =>
+                    account.address.toLocaleLowerCase() ===
+                    transactionObject.from.toLocaleLowerCase()
+                ) as Account)
 
             const { derivationPath, address } = account
             const addressNList = bip32ToAddressNList(derivationPath)
@@ -411,12 +431,12 @@ function keepkey({ filter }: { filter?: Platform[] } = {}): WalletInit {
 
             const gasData = gasPrice
               ? {
-                  gasPrice
-                }
+                gasPrice
+              }
               : {
-                  maxFeePerGas,
-                  maxPriorityFeePerGas
-                }
+                maxFeePerGas,
+                maxPriorityFeePerGas
+              }
 
             const txn = {
               addressNList,

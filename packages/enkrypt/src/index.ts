@@ -2,8 +2,8 @@ import type {
   WalletInit,
   SimpleEventEmitter,
   EIP1193Provider
-} from '@web3-onboard/common'
-import { createEIP1193Provider } from '@web3-onboard/common'
+} from '@subwallet-connect/common'
+import { createEIP1193Provider } from '@subwallet-connect/common'
 import { CustomWindow } from './types.js'
 declare const window: CustomWindow
 
@@ -12,6 +12,7 @@ function enkrypt(): WalletInit {
   return () => {
     return {
       label: 'Enkrypt',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async () => {
         const enkryptExists = window.hasOwnProperty('enkrypt')

@@ -1,4 +1,4 @@
-import type { WalletInit } from '@web3-onboard/common'
+import type { WalletInit } from '@subwallet-connect/common'
 import type { TorusCtorArgs, TorusParams } from '@toruslabs/torus-embed'
 
 type TorusOptions = TorusCtorArgs & TorusParams
@@ -13,13 +13,13 @@ function torus(options?: TorusOptions): WalletInit {
     loginConfig,
     showTorusButton,
     integrity,
-    whiteLabel,
-    skipTKey
+    whiteLabel
   } = options || {}
 
   return () => {
     return {
       label: 'Torus',
+      type : 'evm',
       getIcon: async () => (await import('./icon.js')).default,
       getInterface: async ({ chains }) => {
         const { default: Torus } = await import('@toruslabs/torus-embed')
@@ -28,7 +28,7 @@ function torus(options?: TorusOptions): WalletInit {
           createEIP1193Provider,
           ProviderRpcErrorCode,
           ProviderRpcError
-        } = await import('@web3-onboard/common')
+        } = await import('@subwallet-connect/common')
 
         const [chain] = chains
 
@@ -42,33 +42,17 @@ function torus(options?: TorusOptions): WalletInit {
           buildEnv,
           enableLogging,
           network: {
-            host: chain.rpcUrl,
+            host: chain.rpcUrl || '',
             chainId: parseInt(chain.id),
             networkName: chain.label
           },
           showTorusButton: showTorusButton,
           loginConfig,
           integrity,
-          whiteLabel,
-          skipTKey
+          whiteLabel
         })
 
         const torusProvider = instance.provider
-
-        // patch the chainChanged event
-        const on = torusProvider.on.bind(torusProvider)
-        torusProvider.on = (event, listener) => {
-          on(event, val => {
-            if (event === 'chainChanged') {
-              listener(`0x${(val as number).toString(16)}`)
-              return
-            }
-
-            listener(val)
-          })
-
-          return torusProvider
-        }
 
         const provider = createEIP1193Provider(torusProvider, {
           eth_requestAccounts: async () => {
@@ -88,7 +72,7 @@ function torus(options?: TorusOptions): WalletInit {
             if (!chain) throw new Error('chain must be set before switching')
 
             await instance.setProvider({
-              host: chain.rpcUrl,
+              host: chain.rpcUrl || '',
               chainId: parseInt(chain.id),
               networkName: chain.label
             })

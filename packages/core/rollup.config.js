@@ -5,7 +5,6 @@ import json from '@rollup/plugin-json'
 import sveltePreprocess from 'svelte-preprocess'
 import typescript from '@rollup/plugin-typescript'
 import copy from '@rollup-extras/plugin-copy'
-import commonjs from '@rollup/plugin-commonjs'
 
 const production = !process.env.ROLLUP_WATCH
 
@@ -36,16 +35,13 @@ export default {
       sourceMap: !production,
       inlineSources: !production
     }),
-    commonjs({
-      include: /node_modules/
-    }),
     copy({
       src: 'src/i18n/en.json',
       dest: 'i18n'
     })
   ],
   external: [
-    '@web3-onboard/common',
+    '@subwallet-connect/common',
     'ethers',
     'bowser',
     'joi',
@@ -56,8 +52,12 @@ export default {
     'lodash.merge',
     'lodash.partition',
     'eventemitter3',
+    'bn.js',
     'bignumber.js',
     'bnc-sdk',
-    'nanoid'
+    'nanoid',
+    '@unstoppabledomains/resolution',
+    '@walletconnect/modal',
+    'easyqrcodejs'
   ]
 }

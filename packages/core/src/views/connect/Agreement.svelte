@@ -1,20 +1,26 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n'
   import { STORAGE_KEYS } from '../../constants.js'
-  import { configuration } from '../../configuration.js'
+  import { delLocalStore, getLocalStore, setLocalStore } from '../../utils'
+  import { shareReplay, startWith } from 'rxjs'
+  import { state } from '../../store/index.js'
+
   export let agreed: boolean
 
   const {
     terms: termsAgreed,
     privacy: privacyAgreed,
     version: versionAgreed
-  } = JSON.parse(localStorage.getItem(STORAGE_KEYS.TERMS_AGREEMENT) || '{}')
+  } = JSON.parse(getLocalStore(STORAGE_KEYS.TERMS_AGREEMENT) || '{}')
 
   const blankAgreement = { termsUrl: '', privacyUrl: '', version: '' }
-  const { appMetadata } = configuration
+
+  const appMetadata$ = state
+    .select('appMetadata')
+    .pipe(startWith(state.get().appMetadata), shareReplay(1))
 
   const { termsUrl, privacyUrl, version } =
-    (appMetadata && appMetadata.agreement) || blankAgreement
+    ($appMetadata$ && $appMetadata$.agreement) || blankAgreement
 
   const showTermsOfService = !!(
     (termsUrl && !termsAgreed) ||
@@ -25,7 +31,7 @@
   agreed = !showTermsOfService
 
   $: if (agreed) {
-    localStorage.setItem(
+    setLocalStore(
       STORAGE_KEYS.TERMS_AGREEMENT,
       JSON.stringify({
         version,
@@ -34,7 +40,7 @@
       })
     )
   } else if (agreed === false) {
-    localStorage.removeItem(STORAGE_KEYS.TERMS_AGREEMENT)
+    delLocalStore(STORAGE_KEYS.TERMS_AGREEMENT)
   }
 </script>
 
@@ -67,7 +73,7 @@
         {/if}
         {#if privacyUrl}<a href={privacyUrl} target="_blank"
             >{$_('connect.selectingWallet.agreement.privacy')}</a
-          >.{/if}
+          >{/if}
       </span>
     </label>
   </div>

@@ -2,7 +2,13 @@
   import { fade } from 'svelte/transition'
   import { MOBILE_WINDOW_WIDTH } from '../../constants.js'
 
-  import { WalletAppBadge, SuccessStatusIcon } from '../shared/index.js'
+  import { WalletAppBadge } from '../shared/index.js'
+  import { successIcon, downloadIcon, vectorIcon, qrCodeIcon } from '../../icons/index.js';
+  import { WalletPlatformByLabel } from '../../utils.js';
+  import type { CustomWindow, PlatformType } from '../../types.js';
+  import { onMount } from 'svelte';
+  import type { WalletState } from '../../types.js';
+
 
   export let icon: Promise<string>
   export let label: string
@@ -11,7 +17,63 @@
   export let connecting: boolean
   export let disabled: boolean
 
+  let statusIcon: any = undefined
+  export let typeWallet: string
+
   let windowWidth: number
+
+  let platformList : PlatformType[]
+
+  onMount(()=>{
+    const platformContainer = WalletPlatformByLabel[typeWallet][label as WalletState['label']];
+    if(!platformContainer) return;
+
+    const { platform, namespace } = WalletPlatformByLabel[typeWallet][label as WalletState['label']]
+    if(namespace &&  window !== undefined) {
+      if(typeWallet === 'evm'){
+        if('ethereum' in window){
+          if(!(window.ethereum[namespace as keyof typeof window.ethereum]
+                  || window[namespace as keyof typeof window])){
+            statusIcon = downloadIcon;
+          }
+        }else{
+          statusIcon = downloadIcon;
+        }
+      }else {
+        if ('injectedWeb3' in window) {
+          if (!(window.injectedWeb3[namespace as keyof typeof window.injectedWeb3]
+                  || window[namespace as keyof typeof window])) {
+            statusIcon = downloadIcon;
+          }
+        }else{
+          statusIcon = downloadIcon;
+        }
+      }
+    }
+    if(statusIcon === undefined){
+      if (platform.length === 0) return;
+      platformList = platform
+      switch (platformList[0]){
+        case 'Cold Wallet': {
+          statusIcon = vectorIcon;
+          break;
+        }
+        case 'WebApp':
+        case 'Extension':
+        case 'Mobile':
+        case 'Dapp': {
+          statusIcon = undefined;
+          break;
+        }
+        case 'QRcode': {
+          statusIcon = qrCodeIcon;
+          break;
+        }
+      }
+    }
+  });
+
+
 </script>
 
 <style>
@@ -25,21 +87,7 @@
     flex: 1;
     padding: 0;
     background: none;
-    color: var(
-      --onboard-wallet-button-color,
-      var(--onboard-gray-700, var(--gray-700))
-    );
-  }
-
-  button.wallet-button-styling:hover {
-    background: var(
-      --onboard-wallet-button-background-hover,
-      var(--onboard-primary-100, var(--primary-100))
-    );
-    color: var(
-      --onboard-wallet-button-color-hover,
-      var(--onboard-gray-700, var(--gray-700))
-    );
+    color: var(--onboard-wallet-button-color, inherit);
   }
 
   .wallet-button-container {
@@ -51,9 +99,6 @@
     display: flex;
     flex-flow: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    width: 5rem;
   }
 
   .name {
@@ -71,52 +116,43 @@
     left: 3.5rem;
   }
 
+
+
   @media screen and (min-width: 768px) {
     button.wallet-button-styling {
       transition: background-color 250ms ease-in-out;
-      background: var(
-        --onboard-wallet-button-background,
-        var(--onboard-white, var(--white))
-      );
-      border-radius: var(
-        --onboard-wallet-button-border-radius,
-        var(--border-radius-1)
-      );
-      border: 1px solid
-        var(
-          --onboard-wallet-button-border-color,
-          var(--onboard-primary-200, var(--primary-200))
-        );
+      background: var(--onboard-wallet-button-background, var(--item-color));
+      border: 1px solid transparent;
+      border-color: var(--onboard-wallet-button-border-color, transparent);
+      border-radius: var(--onboard-wallet-button-border-radius, var(--border-radius-5));
     }
 
     button.wallet-button-styling:hover {
-      background: var(
-        --onboard-wallet-button-background-hover,
-        var(--onboard-primary-100, var(--primary-100))
-      );
+      background: var(--onboard-wallet-button-background-hover, var(--action-color));
+      color: var(--onboard-wallet-button-color-hover);
     }
 
     .wallet-button-container-inner {
       flex: 1;
       flex-flow: row nowrap;
-      gap: 1rem;
-      padding: 1rem;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      width: 243px;
+      height: 68px;
     }
 
     button.connected {
       border-color: var(--onboard-success-500, var(--success-500));
     }
 
-    button.connected:hover {
-      background: var(--onboard-success-100, var(--success-100));
-    }
-
     .name {
-      font-size: 1rem;
+      font-size: var(--onboard-font-size-5, var(--font-size-5));
       line-height: 1.25rem;
       text-align: initial;
       max-width: inherit;
       max-height: 3rem;
+      font-weight: 500;
+      color: var(--white);
     }
 
     .status-icon {
@@ -125,9 +161,31 @@
       left: auto;
       right: 1rem;
       margin: auto;
-      height: 20px;
+      height: fit-content;
+      display: flex;
+      align-items: center;
+    }
+
+    /*.subtext {*/
+    /*  font-size: var(--onboard-font-size-7, var(--font-size-7));*/
+    /*  color: var(--gray-400);*/
+    /*  display: flex;*/
+    /*  gap: var(--spacing-4);*/
+    /*  line-height: 20px;*/
+    /*  font-weight: 600;*/
+    /*}*/
+
+    /*.information-group{*/
+    /*  display: flex;*/
+    /*  flex-direction: column;*/
+    /*}*/
+  }
+  @media screen and (max-width: 768px) {
+    button.wallet-button-styling {
+      min-width: 80px;
     }
   }
+
 </style>
 
 <svelte:window bind:innerWidth={windowWidth} />
@@ -137,23 +195,27 @@
     class="wallet-button-styling"
     class:connected
     {disabled}
-    in:fade
+    in:fade|local
     on:click={onClick}
   >
     <div class="wallet-button-container-inner">
       <WalletAppBadge
-        size={windowWidth >= MOBILE_WINDOW_WIDTH ? 48 : 56}
+        size={windowWidth >= MOBILE_WINDOW_WIDTH ? 40 : 56}
+        typeWallet={typeWallet}
         {icon}
         loading={connecting}
-        border={connected ? 'green' : 'blue'}
+        border={connected ? 'green' : 'custom'}
         background="transparent"
       />
-      <div class="name">{label}</div>
-      {#if connected}
+        <div class="name">{label}</div>
         <div class="status-icon">
-          <SuccessStatusIcon size={20} />
+          {#if connected}
+            {@html successIcon}
+          {:else if (statusIcon !== undefined && windowWidth > MOBILE_WINDOW_WIDTH) }
+            {@html statusIcon}
+          {/if}
         </div>
-      {/if}
+
     </div>
   </button>
 </div>
