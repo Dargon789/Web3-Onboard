@@ -1,6 +1,6 @@
 <script>
   import Flexbox from './base/Flexbox.svelte'
-  import PoweredByTw from './svg/powered-by-thirdweb.svg'
+  import PoweredByBn from './svg/powered-by-blocknative.svg'
 
   import DiscordIcon from '~icons/ri/discord-fill'
   import GitHubIcon from '~icons/ri/github-fill'
@@ -10,8 +10,8 @@
   export let iconSize = 40
 
   let text = {
-    license: 'Released under the MIT License',
-    copyright: '© 2025 thirdweb'
+    license: 'Released under the MIT License.',
+    copyright: '© 2023 Blocknative. All Rights Reserved.'
   }
 </script>
 
@@ -25,42 +25,43 @@
     --padding="2rem"
   >
     <Flexbox --direction="row" --gap="2rem" --padding="0">
-      <a class="icon-link" href="//github.com/thirdweb-dev/web3-onboard" target="_blank">
+      <a class="icon-link" href="//github.com/blocknative/web3-onboard" target="_blank">
         <GitHubIcon width={iconSize} height={iconSize} />
         <span class="sr-only">Github</span>
       </a>
-      <a class="icon-link" href="//discord.com/invite/thirdweb" target="_blank">
+      <a class="icon-link" href="//discord.com/invite/KZaBVME" target="_blank">
         <DiscordIcon width={iconSize} height={iconSize} />
         <span class="sr-only">Discord</span>
       </a>
-      <a class="icon-link" href="https://x.com/thirdweb" target="_blank">
+      <a class="icon-link" href="//twitter.com/blocknative" target="_blank">
         <TwitterIcon width={iconSize} height={iconSize} />
-        <span class="sr-only">X (formerly Twitter)</span>
+        <span class="sr-only">Twitter</span>
       </a>
-      <a class="icon-link" href="//www.youtube.com/channel/UCdzMx7Zhy5va5End1-XJFbA" target="_blank">
+      <a class="icon-link" href="//www.youtube.com/c/Blocknative" target="_blank">
         <YoutubeIcon width={iconSize} height={iconSize} />
         <span class="sr-only">Youtube</span>
       </a>
     </Flexbox>
-    <a href="//www.thirdweb.com/" target="_blank" class="logo-link">
-      <img src={PoweredByTw} alt="Powered by thirdweb" style="max-height: 20px;" />
-      <span class="sr-only">Powered by thirdweb</span>
+    <a href="//www.blocknative.com/" target="_blank">
+      <img src={PoweredByBn} alt="Powered by Blocknative" />
+      <span class="sr-only">Powered by Blocknative</span>
     </a>
   </Flexbox>
   <div class="copyright-box">
     <div class="flex flex-row flex-wrap justify-center">
-      <div class="text">{text.license} {text.copyright}</div>
+      <div class="text">{text.license}</div>
+      <div class="text">{text.copyright}</div>
     </div>
     <div class="flex">
       <a
         target="_blank"
-        href="https://thirdweb.com/privacy-policy"
+        href="https://docs.subwallet.app/main/privacy-and-security/security"
         class="text-sm hover:text-white">Privacy Policy</a
       >
       <div class="w-px bg-gray-divider mx-2 h-4" />
       <a
         target="_blank"
-        href="https://thirdweb.com/terms"
+        href="https://docs.subwallet.app/main/privacy-and-security/terms-of-use"
         class="text-sm hover:text-white">Terms of Service</a
       >
     </div>
@@ -69,29 +70,22 @@
 
 <style>
   footer {
-    background: #ebebed;
-    min-height: 200px;
+    background: #1a1d26;
+    min-height: 400px;
     display: flex;
     flex-flow: column;
   }
 
   a.icon-link {
-    color: rgba(20, 20, 20, 0.8);
+    color: rgba(255, 255, 255, 0.8);
     transition: transform 200ms ease-in-out;
   }
   a.icon-link:hover {
-    color: rgba(20, 20, 20, 1.0);
-    transform: scale(1.1);
+    color: rgba(255, 255, 255, 1);
+    transform: scale(1.2);
   }
   a.icon-link:focus {
     transform: none;
-  }
-
-  a.logo-link {
-    opacity: 0.8;
-  }
-  a.logo-link:hover {
-    opacity: 1.0;
   }
 
   .copyright-box {
