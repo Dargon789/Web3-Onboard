@@ -29,11 +29,7 @@ aliases:
     run:
       name: Tagged as Alpha version if True Continue Flow
       command: |
-        PACKAGE_VERSION=$(cat package.json \
-        | grep version \
-        | head -1 \
-        | awk -F: '{ print $2 }' \
-        | sed 's/[",]//g');
+        PACKAGE_VERSION=$(jq -r '.version' package.json);
         if [[ $PACKAGE_VERSION =~ "-alpha" ]];
         then
           echo true
