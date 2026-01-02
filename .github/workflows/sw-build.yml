@@ -2,12 +2,15 @@ name: SubWallet Build
 on:
   pull_request:
     branches:
-      - main
       - sw-dev
+      - main
   push:
     branches:
-      - main
       - sw-dev
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   master:
