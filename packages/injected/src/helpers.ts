@@ -53,14 +53,19 @@ function containsExecutableJavaScript(svgString: string): boolean {
 
   // Use a DOM parser to detect <script> elements robustly
   try {
-    const $ = cheerio.load(svgString, { xmlMode: true })
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
 
-    // Check for any <script> elements
-    if ($('script').length > 0) {
-      return true
+    // If the parser returns an error document, we can't trust the result.
+    // Fall through to the regex-based checks as a safeguard.
+    if (doc.getElementsByTagName('parsererror').length > 0) {
+      // Malformed SVG, fall through to other checks.
+    } else if (doc.querySelector('script')) {
+      // Check for script elements. If found, it's executable.
+      return true;
     }
   } catch {
-    // If parsing fails, fall back to regex-based checks below
+    // If DOMParser throws an error for any reason, fall back to regex checks.
   }
 
   // Regular expression to match event handler attributes (e.g., onclick, onload)
