@@ -1,5 +1,6 @@
 import type { Device, ProviderRpcErrorCode } from '@subwallet-connect/common'
 import type { InjectedProvider, InjectedWalletModule } from './types.js'
+import * as cheerio from 'cheerio'
 
 export class ProviderRpcError extends Error {
   message: string
@@ -49,19 +50,24 @@ export const isWalletAvailable = (
 export 
 function containsExecutableJavaScript(svgString: string): boolean {
   if (!svgString) return false
-  // Regular expression to match <script> tags
-  const scriptTagRegex = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi
+
+  // Use a DOM parser to detect <script> elements robustly
+  try {
+    const $ = cheerio.load(svgString, { xmlMode: true })
+
+    // Check for any <script> elements
+    if ($('script').length > 0) {
+      return true
+    }
+  } catch {
+    // If parsing fails, fall back to regex-based checks below
+  }
 
   // Regular expression to match event handler attributes (e.g., onclick, onload)
   const eventHandlerRegex = /\bon[a-z]+\s*=\s*["']?(?:javascript:)?/gi
 
   // Regular expression to match href or xlink:href attributes containing "javascript:"
   const hrefJavaScriptRegex = /\b(href|xlink:href)\s*=\s*["']?javascript:/gi
-
-  // Check for <script> tags
-  if (scriptTagRegex.test(svgString)) {
-    return true
-  }
 
   // Check for event handlers
   if (eventHandlerRegex.test(svgString)) {
