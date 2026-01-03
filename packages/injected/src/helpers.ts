@@ -67,7 +67,7 @@ function containsExecutableJavaScript(svgString: string): boolean {
   const eventHandlerRegex = /\bon[a-z]+\s*=\s*["']?(?:javascript:)?/gi
 
   // Regular expression to match href or xlink:href attributes containing "javascript:"
-  const hrefJavaScriptRegex = /\b(href|xlink:href)\s*=\s*["']?javascript:/gi
+  const hrefJavaScriptRegex = /\b(href|xlink:href)\s*=\s*["']?\s*javascript:/gi
 
   // Check for event handlers
   if (eventHandlerRegex.test(svgString)) {
