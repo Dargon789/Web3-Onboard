@@ -106,6 +106,7 @@ const frontier: InjectedWalletModule = {
 
 const brave: InjectedWalletModule = {
   label: ProviderLabel.Brave,
+  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.BraveWallet],
