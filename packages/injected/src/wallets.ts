@@ -91,6 +91,7 @@ const exodus: InjectedWalletModule = {
 
 const frontier: InjectedWalletModule = {
   label: ProviderLabel.Frontier,
+  type: 'evm',
   injectedNamespace: InjectedNameSpace.Frontier,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
