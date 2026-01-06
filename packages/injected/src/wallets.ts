@@ -69,6 +69,7 @@ const metamask: InjectedWalletModule = {
 
 const infinitywallet: InjectedWalletModule = {
   label: ProviderLabel.InfinityWallet,
+  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.InfinityWallet],
