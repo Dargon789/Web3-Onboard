@@ -55,6 +55,7 @@ function otherProviderFlagsExist(identity: string, provider: any): boolean {
 
 const metamask: InjectedWalletModule = {
   label: ProviderLabel.MetaMask,
+  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
