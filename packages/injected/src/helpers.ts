@@ -57,7 +57,7 @@ function containsExecutableJavaScript(svgString: string): boolean {
   // executable or otherwise unsafe content.
   // Configure DOMPurify for SVG content.
   DOMPurify.removed = []
-  DOMPurify.sanitize(svgString, { USE_PROFILES: { svg: true } })
+  DOMPurify.sanitize(svgString, { USE_PROFILES: { svg: true }, SANITIZE_DOM: false })
 
   return Array.isArray(DOMPurify.removed) && DOMPurify.removed.length > 0
 }
