@@ -1,6 +1,6 @@
 ---
-name: Custom issue template
-about: Describe this issue template's purpose here.
+name: Other issue
+about: Use this for any other issues.
 title: ''
 labels: ''
 assignees: ''
