@@ -55,7 +55,6 @@ function otherProviderFlagsExist(identity: string, provider: any): boolean {
 
 const metamask: InjectedWalletModule = {
   label: ProviderLabel.MetaMask,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
@@ -69,7 +68,6 @@ const metamask: InjectedWalletModule = {
 
 const infinitywallet: InjectedWalletModule = {
   label: ProviderLabel.InfinityWallet,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.InfinityWallet],
@@ -80,7 +78,6 @@ const infinitywallet: InjectedWalletModule = {
 
 const exodus: InjectedWalletModule = {
   label: ProviderLabel.Exodus,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.Exodus],
@@ -91,7 +88,6 @@ const exodus: InjectedWalletModule = {
 
 const frontier: InjectedWalletModule = {
   label: ProviderLabel.Frontier,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Frontier,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
@@ -106,7 +102,6 @@ const frontier: InjectedWalletModule = {
 
 const brave: InjectedWalletModule = {
   label: ProviderLabel.Brave,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.BraveWallet],
@@ -805,7 +800,6 @@ const ronin: InjectedWalletModule = {
 
 const onekey: InjectedWalletModule = {
   label: ProviderLabel.OneKey,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.OneKey,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
@@ -821,7 +815,6 @@ const onekey: InjectedWalletModule = {
 
 const fordefi: InjectedWalletModule = {
   label: ProviderLabel.Fordefi,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
@@ -834,7 +827,6 @@ const fordefi: InjectedWalletModule = {
 
 const coin98wallet: InjectedWalletModule = {
   label: ProviderLabel.Coin98Wallet,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.Coin98Wallet],
@@ -864,7 +856,6 @@ const coin98wallet: InjectedWalletModule = {
 
 const subwallet: InjectedWalletModule = {
   label: ProviderLabel.SubWallet,
-  type: 'evm',
   injectedNamespace: InjectedNameSpace.SubWallet,
   checkProviderIdentity: ({ provider }) =>
     !!provider && !!provider[ProviderIdentityFlag.SubWallet],
