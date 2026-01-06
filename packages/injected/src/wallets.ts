@@ -821,6 +821,7 @@ const onekey: InjectedWalletModule = {
 
 const fordefi: InjectedWalletModule = {
   label: ProviderLabel.Fordefi,
+  type: 'evm',
   injectedNamespace: InjectedNameSpace.Ethereum,
   checkProviderIdentity: ({ provider }) =>
     !!provider &&
