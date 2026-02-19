@@ -1,4 +1,6 @@
 name: PR Status Checks
+permissions:
+  contents: read
 
 on:
   # Allows it to be manually triggered, used primarily for debugging 
