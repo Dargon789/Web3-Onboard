@@ -443,7 +443,7 @@ export function delLocalStore(key: string): void {
   }
 }
 
-export const baseURL = 'https://*/api/scan/account/tokens';
+export const basePath = '/api/scan/account/tokens';
 
 export type dataTypeFetch  = {
   address : string
@@ -456,7 +456,8 @@ export interface  clientAxiosProps {
 
 export async function getBalanceSubstrate({ url, data } : clientAxiosProps){
   if(url === '') return
-  const urlResult = baseURL.replace('*', url);
+  const normalizedUrl = url.replace(/^https?:\/\//, '')
+  const urlResult = `https://${encodeURI(normalizedUrl)}${basePath}`;
   return await axios.post(urlResult, data)
     .then( data_ => {
       return data_.data.data ? data_.data.data.native[0].balance : '0';
