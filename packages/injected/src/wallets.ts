@@ -118,7 +118,7 @@ const binance: InjectedWalletModule = {
   getIcon: async () => (await import('./icons/binance.js')).default,
   getInterface: async () => {
     // Replace the provider as the BNB provider is readonly
-    let tempBNBProvider: BinanceProvider = {
+    const tempBNBProvider: BinanceProvider = {
       ...window.BinanceChain
     }
     window.BinanceChain = tempBNBProvider
