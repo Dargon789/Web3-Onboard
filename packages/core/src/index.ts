@@ -163,7 +163,7 @@ function init(options: InitOptions): OnboardAPI {
   // update notify
   if (typeof notify !== 'undefined') {
     console.warn(
-      `Support for notifications on transaction state changes have been deprecated. Custom notifications can still be sent ot the user.`
+      `Support for notifications on transaction state changes have been deprecated. Custom notifications can still be sent to the user.`
     )
     if ('desktop' in notify || 'mobile' in notify) {
       const error = validateNotifyOptions(notify)
