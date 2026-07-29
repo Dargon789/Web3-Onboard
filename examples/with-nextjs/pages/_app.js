@@ -28,8 +28,8 @@ const celoMainnet = {
   token: 'ETH',
   label: 'Celo',
   rpcUrl: 'https://1rpc.io/celo'
-},
-{
+}
+const degenMainnet = {
   id: 666666666,
   token: 'DEGEN',
   label: 'Degen',
